@@ -569,8 +569,7 @@ export default function PortfolioShowcase() {
                 Produtos e projetos
               </span>
               <h2 className="mt-5 text-3xl font-semibold text-white md:text-5xl">
-                O portfólio já fica preparado para receber cada produto no lugar
-                certo.
+                Não crio sistemas, crio soluções que geram resultados reais. 🚀
               </h2>
             </div>
 
