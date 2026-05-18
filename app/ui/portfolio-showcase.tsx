@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -71,20 +72,20 @@ const catalogItems = [
   {
     icon: Blocks,
     status: "Produto independente",
-    title: "SaaS em fase de testes",
+    title: "NFSe Goo",
     description:
-      "Espaço reservado para o SaaS que já foi desenvolvido e está em validação. Quando estiver pronto para o público, entra aqui como produto próprio.",
-    path: "/produtos/saas",
-    items: ["SaaS", "Validação", "Produto próprio"],
+      "Plataforma independente para gestão e emissão de NFS-e, pensada para simplificar a rotina fiscal com uma experiência direta, organizada e pronta para uso.",
+    actionLabel: "NFSe Goo",
+    actionHref: "http://167.234.226.24:3001",
   },
   {
     icon: Wrench,
-    status: "Linha fiscal",
-    title: "Ferramentas de cálculo para impostos",
+    status: "Produto eepy",
+    title: "Linha agio",
     description:
-      "Área preparada para calculadoras e utilitários fiscais, incluindo materiais de Simples Nacional, LP e outras rotinas que ainda vão evoluir.",
-    path: "/produtos/ferramentas-fiscais",
-    items: ["Simples Nacional", "LP", "Cálculos fiscais"],
+      "Hub próprio para reunir ferramentas, calculadoras e utilitários em uma experiência organizada, simples de acessar e pronta para evoluir.",
+    actionLabel: "Linha agio",
+    actionHref: "/produtos/ferramentas-agies",
   },
   {
     icon: Workflow,
@@ -290,6 +291,8 @@ function CatalogCard({
   description,
   status,
   path,
+  actionLabel,
+  actionHref,
   items,
   index,
 }: {
@@ -297,11 +300,14 @@ function CatalogCard({
   title: string;
   description: string;
   status: string;
-  path: string;
-  items: string[];
+  path?: string;
+  actionLabel?: string;
+  actionHref?: string;
+  items?: string[];
   index: number;
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const isExternalAction = actionHref?.startsWith("http");
 
   return (
     <motion.article
@@ -324,23 +330,47 @@ function CatalogCard({
         <h3 className="text-2xl font-semibold text-white">{title}</h3>
         <p className="mt-4 text-sm leading-7 text-slate-300">{description}</p>
 
-        <div className="mt-6 rounded-2xl border border-white/8 bg-slate-950/55 px-4 py-4">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-slate-400">
-            Caminho sugerido
-          </p>
-          <p className="mt-2 font-mono text-sm text-cyan-200">{path}</p>
-        </div>
+        {path ? (
+          <div className="mt-6 rounded-2xl border border-white/8 bg-slate-950/55 px-4 py-4">
+            <p className="text-[11px] uppercase tracking-[0.26em] text-slate-400">
+              Caminho sugerido
+            </p>
+            <p className="mt-2 font-mono text-sm text-cyan-200">{path}</p>
+          </div>
+        ) : null}
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {items.map((item) => (
-            <span
-              key={item}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
+        {actionHref && isExternalAction ? (
+          <a
+            href={actionHref}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_54px_rgba(249,115,22,0.22)] focus:outline-none focus:ring-2 focus:ring-cyan-200/70 focus:ring-offset-2 focus:ring-offset-slate-950"
+          >
+            Acessar {actionLabel}
+            <ArrowUpRight className="h-4 w-4" />
+          </a>
+        ) : actionHref ? (
+          <Link
+            href={actionHref}
+            className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_54px_rgba(249,115,22,0.22)] focus:outline-none focus:ring-2 focus:ring-cyan-200/70 focus:ring-offset-2 focus:ring-offset-slate-950"
+          >
+            Acessar {actionLabel}
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        ) : null}
+
+        {items?.length ? (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {items.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </SurfaceCard>
     </motion.article>
   );

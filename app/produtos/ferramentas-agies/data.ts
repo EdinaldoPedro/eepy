@@ -23,7 +23,7 @@ export const toolCatalog: ToolCatalogItem[] = [
     summary:
       "Primeira ferramenta ativa do hub, feita para reunir cenários do Simples Nacional e do Lucro Presumido em um fluxo web.",
     status: "disponivel",
-    href: "/produtos/ferramentas-fiscais/simulador-impostos",
+    href: "/produtos/ferramentas-agies/simulador-impostos-sn-lp",
     tags: ["Simples Nacional", "Lucro Presumido", "TypeScript"],
     note: "Base atual em migração da lógica Python para o site.",
   },
@@ -33,7 +33,7 @@ export const toolCatalog: ToolCatalogItem[] = [
     summary:
       "Espaço já reservado para a próxima ferramenta. Ela entra depois, sem quebrar a estrutura do hub.",
     status: "em-breve",
-    href: "/produtos/ferramentas-fiscais/valor-bruto",
+    href: "/produtos/ferramentas-agies/valor-bruto",
     tags: ["Em breve", "Financeiro", "Cálculo"],
     note: "Card preparado, mas ainda sem fluxo ativo.",
   },
