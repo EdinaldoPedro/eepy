@@ -20,6 +20,10 @@ import {
   type DasCalculo,
   type DasResultado,
 } from "../simulador-impostos-sn-lp/calculo-das";
+import {
+  cnaesSimples,
+  type CnaeSimples,
+} from "../data/cnaes-simples";
 
 const regimeOptions = [
   {
@@ -45,6 +49,14 @@ type MonthRevenueField = {
   id: string;
   label: string;
   value: string;
+};
+
+const anexoLabels: Record<AnexoSimples, string> = {
+  1: "Anexo I",
+  2: "Anexo II",
+  3: "Anexo III",
+  4: "Anexo IV",
+  5: "Anexo V",
 };
 
 const simplesPathOptions = [
@@ -111,6 +123,36 @@ function formatCurrencyFromDigits(value: string) {
 function parseCurrency(value: string) {
   const normalized = value.replace(/\D/g, "");
   return Number(normalized || "0") / 100;
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasCommonPracticeFor(value: string, word: string) {
+  const normalized = normalizeSearch(value);
+
+  return normalized.includes("pratica mais comum") && normalized.includes(word);
+}
+
+function hasSameAnexos(
+  anexos: Array<1 | 2 | 3 | 4 | 5>,
+  expected: Array<1 | 2 | 3 | 4 | 5>,
+) {
+  return (
+    anexos.length === expected.length &&
+    expected.every((anexo) => anexos.includes(anexo))
+  );
+}
+
+function formatCnae(cnae: string) {
+  return cnae.replace(/^(\d{4})(\d)(\d{2})$/, "$1-$2/$3");
 }
 
 function getTodayDateString() {
@@ -424,6 +466,9 @@ export default function SimulatorModePicker() {
     useState<SimplesPath>("anexo");
   const [selectedAnexo, setSelectedAnexo] = useState("");
   const [cnaeQuery, setCnaeQuery] = useState("");
+  const [selectedCnae, setSelectedCnae] = useState<CnaeSimples | null>(null);
+  const [selectedCnaeAnexo, setSelectedCnaeAnexo] =
+    useState<AnexoSimples | null>(null);
   const [selectedRbtPath, setSelectedRbtPath] =
     useState<RbtPath>("informar");
   const [rbt12, setRbt12] = useState("");
@@ -447,13 +492,59 @@ export default function SimulatorModePicker() {
   const shouldShowRbtStep =
     selectedSimplesPath === "anexo"
       ? Boolean(selectedAnexo)
-      : Boolean(cnaeQuery.trim());
+      : Boolean(selectedCnae?.permitido && selectedCnaeAnexo);
+  const cnaeResults =
+    cnaeQuery.trim().length >= 2
+      ? cnaesSimples
+          .filter((item) => {
+            const query = normalizeSearch(cnaeQuery);
+            const queryDigits = cnaeQuery.replace(/\D/g, "");
+
+            return (
+              (queryDigits.length > 0 && item.cnae.includes(queryDigits)) ||
+              normalizeSearch(item.descricao).includes(query)
+            );
+          })
+          .slice(0, 8)
+      : [];
   const shouldShowDasFields =
     shouldShowRbtStep &&
     (selectedRbtPath === "informar" ||
       usesCurrentMonthAsRbtBase ||
       Boolean(rbt12)) &&
     isRbtConfirmed;
+  const isComercioServicoAmbiguo =
+    selectedCnae?.permitido &&
+    hasSameAnexos(selectedCnae.anexosPossiveis, [1, 3]) &&
+    hasCommonPracticeFor(selectedCnae.observacao, "comercio");
+  const isComercioIndustriaServicoAmbiguo =
+    selectedCnae?.permitido &&
+    hasSameAnexos(selectedCnae.anexosPossiveis, [1, 2, 3]) &&
+    hasCommonPracticeFor(selectedCnae.observacao, "industria");
+  const isIndustriaServicoAmbiguo =
+    selectedCnae?.permitido &&
+    hasSameAnexos(selectedCnae.anexosPossiveis, [2, 3]) &&
+    normalizeSearch(selectedCnae.observacao).includes(
+      "pratica mais comum ii",
+    ) &&
+    normalizeSearch(selectedCnae.observacao).includes(
+      "se nao conceito industrial iii",
+    );
+  const isIndustriaServicoCommonAmbiguo =
+    selectedCnae?.permitido &&
+    hasSameAnexos(selectedCnae.anexosPossiveis, [2, 3]) &&
+    hasCommonPracticeFor(selectedCnae.observacao, "industria");
+  const isServicoObraAmbiguo =
+    selectedCnae?.permitido &&
+    hasSameAnexos(selectedCnae.anexosPossiveis, [3, 4]) &&
+    normalizeSearch(selectedCnae.observacao).includes(
+      "pratica mais comum iii",
+    ) &&
+    normalizeSearch(selectedCnae.observacao).includes("construcao obra iv");
+  const isSuggestedAnexoUmOuDois =
+    selectedCnae?.permitido &&
+    selectedCnae.anexosPossiveis.length > 1 &&
+    (selectedCnae.anexoPadrao === 1 || selectedCnae.anexoPadrao === 2);
 
   function handleConfirmRbt() {
     setDasError("");
@@ -568,7 +659,7 @@ export default function SimulatorModePicker() {
       selectedSimplesPath === "anexo"
         ? (anexoOptions.find((option) => option.value === selectedAnexo)
             ?.anexo as AnexoSimples | undefined)
-        : undefined;
+        : selectedCnaeAnexo ?? undefined;
     const faturamentoValue = parseCurrency(faturamentoMensal);
     const rbt12Value = usesCurrentMonthAsRbtBase
       ? faturamentoValue * 12
@@ -696,6 +787,8 @@ export default function SimulatorModePicker() {
                       setIsRbtConfirmed(false);
                       setUsesCurrentMonthAsRbtBase(false);
                       setMonthRevenues([]);
+                      setSelectedCnae(null);
+                      setSelectedCnaeAnexo(null);
                       setDasResult(null);
                       setDasError("");
                       setRbtError("");
@@ -776,19 +869,176 @@ export default function SimulatorModePicker() {
                     <input
                       type="text"
                       value={cnaeQuery}
-                      onChange={(event) => setCnaeQuery(event.target.value)}
+                      onChange={(event) => {
+                        setCnaeQuery(event.target.value);
+                        setSelectedCnae(null);
+                        setSelectedCnaeAnexo(null);
+                        setIsRbtConfirmed(false);
+                        setDasResult(null);
+                        setDasError("");
+                      }}
                       placeholder="Ex: 6201-5/01 ou desenvolvimento de software"
                       className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
                     />
                   </label>
 
-                  <div className="mt-5 rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-4">
-                    <p className="text-sm leading-7 text-slate-200">
-                      Esta busca sera ligada a um arquivo de de-para com numero
-                      do CNAE, descricao e anexo correspondente. CNAEs ambiguos
-                      serao tratados em uma etapa futura.
+                  {selectedCnae ? (
+                    <div className="mt-5 rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            {formatCnae(selectedCnae.cnae)} -{" "}
+                            {selectedCnae.descricao}
+                          </p>
+                          {selectedCnae.observacao ? (
+                            <p className="mt-2 text-sm leading-6 text-slate-300">
+                              {selectedCnae.observacao}
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCnae(null);
+                            setSelectedCnaeAnexo(null);
+                            setIsRbtConfirmed(false);
+                          }}
+                          className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors duration-300 hover:border-white/20 hover:text-white"
+                        >
+                          Trocar
+                        </button>
+                      </div>
+
+                      {!selectedCnae.permitido ? (
+                        <p className="mt-4 rounded-2xl border border-orange-300/20 bg-orange-400/10 p-3 text-sm leading-6 text-orange-100">
+                          Esta atividade esta marcada como nao permitida para
+                          seguir na simulacao do Simples Nacional.
+                        </p>
+                      ) : (
+                        <div className="mt-4">
+                          <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                            {isComercioServicoAmbiguo ||
+                            isComercioIndustriaServicoAmbiguo
+                            || isIndustriaServicoAmbiguo
+                            || isIndustriaServicoCommonAmbiguo
+                            || isServicoObraAmbiguo
+                            || isSuggestedAnexoUmOuDois
+                              ? "Escolha como levar para o calculo"
+                              : "Anexo aplicado no calculo"}
+                          </p>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {selectedCnae.anexosPossiveis.map((anexo) => {
+                              const isActive = selectedCnaeAnexo === anexo;
+                              const canChoose =
+                                selectedCnae.anexosPossiveis.length > 1;
+                              const optionClass = `rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-300 ${
+                                isActive
+                                  ? "border-cyan-300/35 bg-cyan-300/10 text-white"
+                                  : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/8"
+                              }`;
+                              const optionContent = (
+                                <>
+                                  {anexoLabels[anexo]}
+                                  {canChoose ? (
+                                    <span className="ml-2 text-xs text-cyan-100">
+                                      {anexo === 1
+                                        ? "comercio"
+                                        : anexo === 2
+                                          ? "industria"
+                                          : anexo === 4
+                                            ? "construcao/obra"
+                                            : "servico"}
+                                    </span>
+                                  ) : (
+                                    <span className="ml-2 text-xs text-cyan-100">
+                                      validado
+                                    </span>
+                                  )}
+                                </>
+                              );
+
+                              return canChoose ? (
+                                <button
+                                  key={anexo}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCnaeAnexo(anexo);
+                                    setIsRbtConfirmed(false);
+                                    setDasResult(null);
+                                    setDasError("");
+                                  }}
+                                  className={optionClass}
+                                >
+                                  {optionContent}
+                                </button>
+                              ) : (
+                                <div key={anexo} className={optionClass}>
+                                  {optionContent}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : cnaeResults.length > 0 ? (
+                    <div className="mt-4 grid max-h-72 gap-2 overflow-y-auto pr-1">
+                      {cnaeResults.map((item) => (
+                        <button
+                          key={item.cnae}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCnae(item);
+                            setSelectedCnaeAnexo(
+                              item.permitido &&
+                                item.anexosPossiveis.length === 1
+                                ? (item.anexosPossiveis[0] as AnexoSimples)
+                                : null,
+                            );
+                            setCnaeQuery(
+                              `${formatCnae(item.cnae)} - ${item.descricao}`,
+                            );
+                            setIsRbtConfirmed(false);
+                            setDasResult(null);
+                            setDasError("");
+                          }}
+                          className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors duration-300 hover:border-cyan-300/30 hover:bg-cyan-300/8"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-white">
+                              {formatCnae(item.cnae)}
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                                item.permitido &&
+                                item.anexosPossiveis.length === 1
+                                  ? "border border-cyan-300/15 bg-cyan-300/8 text-cyan-100"
+                                  : "border border-orange-300/20 bg-orange-400/10 text-orange-100"
+                              }`}
+                            >
+                              {!item.permitido
+                                ? "vedada"
+                                  : "permitida"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm leading-5 text-slate-300">
+                            {item.descricao}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : cnaeQuery.trim().length >= 2 ? (
+                    <p className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                      Nenhum CNAE encontrado para essa busca.
                     </p>
-                  </div>
+                  ) : (
+                    <div className="mt-5 rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-4">
+                      <p className="text-sm leading-7 text-slate-200">
+                        Pesquise pelo numero do CNAE ou por palavras da
+                        atividade. Depois escolha o CNAE para definir o anexo.
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
             </div>
