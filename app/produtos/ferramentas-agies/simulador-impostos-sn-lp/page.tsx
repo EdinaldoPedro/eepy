@@ -43,12 +43,24 @@ export default function SimuladorImpostosSnLpPage() {
 
       <section className="mt-5 grid gap-5 lg:grid-cols-3">
         {[
-          "Responder o questionario",
-          "Calcular o cenario",
-          "Visualizar resultado",
+          {
+            title: "Responder o questionario",
+            description:
+              "Escolha o regime, defina Anexo ou CNAE e informe a RBT12 manual ou proporcionalizada.",
+          },
+          {
+            title: "Calcular o DAS",
+            description:
+              "Informe exportacao e faturamento mensal para calcular DAS, aliquota, faixa e rateio.",
+          },
+          {
+            title: "Resultado e pro-labore",
+            description:
+              "Veja o liquido, calcule DARF opcional e aplique Fator R quando o pro-labore permitir.",
+          },
         ].map((step, index) => (
           <article
-            key={step}
+            key={step.title}
             className="surface-card rounded-[28px] border border-white/10 p-6 md:p-7"
           >
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-400/12 text-orange-200">
@@ -57,7 +69,12 @@ export default function SimuladorImpostosSnLpPage() {
             <p className="mt-6 text-[11px] uppercase tracking-[0.26em] text-slate-400">
               Etapa {index + 1}
             </p>
-            <h2 className="mt-4 text-xl font-semibold text-white">{step}</h2>
+            <h2 className="mt-4 text-xl font-semibold text-white">
+              {step.title}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              {step.description}
+            </p>
           </article>
         ))}
       </section>

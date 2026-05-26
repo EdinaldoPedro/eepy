@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BadgeCheck,
   Calculator,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   FileText,
   Layers3,
   Search,
 } from "lucide-react";
 import {
+  calcularDarfProLabore,
   calcularDasSimplesNacional,
+  PISO_PRO_LABORE_2026,
   type AnexoSimples,
+  type DarfProLaboreResultado,
   type DasCalculo,
   type DasResultado,
 } from "../simulador-impostos-sn-lp/calculo-das";
@@ -191,6 +195,10 @@ function formatPercent(value: number) {
   })}%`;
 }
 
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 function ResultadoDasCard({
   resultado,
   title,
@@ -198,55 +206,211 @@ function ResultadoDasCard({
   resultado: DasResultado;
   title: string;
 }) {
-  return (
-    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5">
-      <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
-        {title}
-      </p>
+  const [isExpanded, setIsExpanded] = useState(false);
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            DAS
+  return (
+    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+            {title}
           </p>
-          <p className="mt-2 text-xl font-semibold text-white">
+          <p className="mt-2 text-3xl font-semibold text-white">
             {formatCurrency(resultado.valorDasAPagar)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            Aliquota
-          </p>
-          <p className="mt-2 text-xl font-semibold text-white">
-            {formatPercent(resultado.aliquotaEfetivaPercent)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            Faixa
-          </p>
-          <p className="mt-2 text-xl font-semibold text-white">
-            {resultado.faixa}
-          </p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-200">
+            Aliquota {formatPercent(resultado.aliquotaEfetivaPercent)}
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-200">
+            Faixa {resultado.faixa}
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsExpanded((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
+          >
+            Detalhes
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
+          </button>
         </div>
       </div>
 
-      <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
-          Rateio por tributo
-        </p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {Object.entries(resultado.rateio).map(([tributo, valor]) => (
-            <div
-              key={tributo}
-              className="flex items-center justify-between gap-4 rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2 text-sm"
+      {isExpanded ? (
+        <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {Object.entries(resultado.rateio).map(([tributo, valor]) => (
+              <div
+                key={tributo}
+                className="rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2 text-xs"
+              >
+                <span className="block truncate text-slate-300">{tributo}</span>
+                <span className="mt-1 block truncate font-semibold text-white">
+                  {valor === 0 ? "Isento" : formatCurrency(valor)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function ResultadoFinalCard({
+  darfResult,
+  dasResult,
+  faturamentoMensal,
+  onCalcularDarf,
+  proLabore,
+  proLaboreError,
+  setProLabore,
+}: {
+  darfResult: DarfProLaboreResultado | null;
+  dasResult: DasCalculo;
+  faturamentoMensal: string;
+  onCalcularDarf: () => void;
+  proLabore: string;
+  proLaboreError: string;
+  setProLabore: (value: string) => void;
+}) {
+  const faturamento = parseCurrency(faturamentoMensal);
+  const fatorRMinimo = roundCurrency(faturamento * 0.28);
+  const proLaboreFatorRBase = Math.max(PISO_PRO_LABORE_2026, fatorRMinimo);
+  const aplicaFatorR =
+    Boolean(dasResult.fatorR) &&
+    Boolean(darfResult) &&
+    (darfResult?.proLabore ?? 0) >= fatorRMinimo;
+  const resultadoDasAplicado = aplicaFatorR
+    ? (dasResult.fatorR ?? dasResult.padrao)
+    : dasResult.padrao;
+  const das = resultadoDasAplicado.valorDasAPagar;
+  const darf = darfResult?.totalDarf ?? 0;
+  const cargaTributaria = das + darf;
+  const liquido = Math.max(0, faturamento - das - darf);
+  const linhas = [
+    { label: "Faturamento", value: faturamento },
+    { label: "DAS", value: -das },
+    { label: "DARF", value: -darf },
+    { label: "Carga tributaria total", value: -cargaTributaria },
+    { label: "Liquido", value: liquido },
+  ];
+
+  return (
+    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+            Pro-labore opcional
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Informe um valor a partir de {formatCurrency(PISO_PRO_LABORE_2026)}
+            para calcular INSS, IR e DARF.
+          </p>
+          {dasResult.fatorR ? (
+            <div className="mt-3 rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-3">
+              <p className="text-sm leading-6 text-slate-200">
+                Para aplicar Fator R neste cenario, o pro-labore precisa ser de
+                pelo menos {formatCurrency(proLaboreFatorRBase)}.
+              </p>
+              <button
+                type="button"
+                onClick={() => setProLabore(formatCurrency(proLaboreFatorRBase))}
+                className="mt-3 rounded-full border border-cyan-300/20 px-3 py-1.5 text-xs font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/40"
+              >
+                Usar base do Fator R
+              </button>
+            </div>
+          ) : null}
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <input
+              inputMode="numeric"
+              type="text"
+              value={proLabore}
+              onChange={(event) =>
+                setProLabore(formatCurrencyFromDigits(event.target.value))
+              }
+              placeholder={formatCurrency(PISO_PRO_LABORE_2026)}
+              className="h-12 rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
+            />
+            <button
+              type="button"
+              onClick={onCalcularDarf}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.18)] transition-all duration-300 hover:-translate-y-0.5"
             >
-              <span className="text-slate-300">{tributo}</span>
-              <span className="font-semibold text-white">
-                {valor === 0 ? "Isento" : formatCurrency(valor)}
+              Calcular DARF
+              <CheckCircle2 className="h-4 w-4" />
+            </button>
+          </div>
+          {proLaboreError ? (
+            <p className="mt-3 rounded-2xl border border-orange-300/20 bg-orange-400/10 p-3 text-sm text-orange-100">
+              {proLaboreError}
+            </p>
+          ) : null}
+          {darfResult ? (
+            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                INSS {formatCurrency(darfResult.inss)}
+              </span>
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                IR {formatCurrency(darfResult.irpf)}
+              </span>
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                DARF {formatCurrency(darfResult.totalDarf)}
               </span>
             </div>
-          ))}
+          ) : null}
+          {dasResult.fatorR && darfResult && !aplicaFatorR ? (
+            <p className="mt-3 rounded-2xl border border-orange-300/20 bg-orange-400/10 p-3 text-sm text-orange-100">
+              Pro-labore abaixo de 28% do faturamento. O resumo permanece no
+              Anexo V padrao.
+            </p>
+          ) : null}
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/5 p-4">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-200">
+            Resumo liquido
+          </p>
+          {dasResult.fatorR ? (
+            <p className="mt-2 rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2 text-xs font-semibold text-slate-200">
+              Regra aplicada:{" "}
+              {aplicaFatorR ? "Anexo III / Fator R" : "Anexo V padrao"}
+            </p>
+          ) : null}
+          <div className="mt-3 grid gap-2">
+            {linhas.map((linha) => {
+              const percent =
+                faturamento > 0 ? Math.abs(linha.value / faturamento) * 100 : 0;
+              const isDiscount = linha.value < 0;
+
+              return (
+                <div
+                  key={linha.label}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2 text-sm"
+                >
+                  <span className="text-slate-300">{linha.label}</span>
+                  <span
+                    className={`font-semibold ${
+                      isDiscount ? "text-orange-100" : "text-white"
+                    }`}
+                  >
+                    {isDiscount ? "- " : ""}
+                    {formatCurrency(Math.abs(linha.value))}
+                    <span className="ml-2 text-xs text-slate-400">
+                      {formatPercent(percent)}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </article>
@@ -272,6 +436,12 @@ export default function SimulatorModePicker() {
   const [isRbtConfirmed, setIsRbtConfirmed] = useState(false);
   const [dasResult, setDasResult] = useState<DasCalculo | null>(null);
   const [dasError, setDasError] = useState("");
+  const [showFinalResult, setShowFinalResult] = useState(false);
+  const [proLabore, setProLabore] = useState("");
+  const [darfResult, setDarfResult] = useState<DarfProLaboreResultado | null>(
+    null,
+  );
+  const [proLaboreError, setProLaboreError] = useState("");
   const [rbtError, setRbtError] = useState("");
   const [calculationPulse, setCalculationPulse] = useState(false);
   const shouldShowRbtStep =
@@ -331,6 +501,12 @@ export default function SimulatorModePicker() {
     setIsRbtConfirmed(true);
   }
 
+  function clearFinalResult() {
+    setShowFinalResult(false);
+    setDarfResult(null);
+    setProLaboreError("");
+  }
+
   function handleConfirmMonthRevenues() {
     setDasError("");
     setRbtError("");
@@ -361,13 +537,33 @@ export default function SimulatorModePicker() {
     setIsRbtConfirmed(true);
   }
 
-  useEffect(() => {
-    if (!shouldShowDasFields) {
-      setDasResult(null);
-      setDasError("");
+  function handleCalcularDarf() {
+    setProLaboreError("");
+    setDarfResult(null);
+
+    const proLaboreValue = parseCurrency(proLabore);
+
+    if (proLaboreValue < PISO_PRO_LABORE_2026) {
+      setProLaboreError(
+        `Informe um pro-labore de pelo menos ${formatCurrency(
+          PISO_PRO_LABORE_2026,
+        )}.`,
+      );
       return;
     }
 
+    try {
+      setDarfResult(calcularDarfProLabore(proLaboreValue));
+    } catch (error) {
+      setProLaboreError(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel calcular o DARF.",
+      );
+    }
+  }
+
+  function handleConfirmDas() {
     const anexo =
       selectedSimplesPath === "anexo"
         ? (anexoOptions.find((option) => option.value === selectedAnexo)
@@ -380,6 +576,7 @@ export default function SimulatorModePicker() {
 
     setDasResult(null);
     setDasError("");
+    clearFinalResult();
 
     if (!anexo) {
       setDasError(
@@ -391,6 +588,7 @@ export default function SimulatorModePicker() {
     }
 
     if (!exportacaoServico || faturamentoValue <= 0) {
+      setDasError("Informe exportacao para o exterior e faturamento mensal.");
       return;
     }
 
@@ -403,19 +601,14 @@ export default function SimulatorModePicker() {
           rbt12: rbt12Value,
         }),
       );
+      setShowFinalResult(false);
+      setDarfResult(null);
+      setProLaboreError("");
       setCalculationPulse(false);
-      let timeoutId: number | undefined;
-      const frameId = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         setCalculationPulse(true);
-        timeoutId = window.setTimeout(() => setCalculationPulse(false), 260);
+        window.setTimeout(() => setCalculationPulse(false), 260);
       });
-
-      return () => {
-        window.cancelAnimationFrame(frameId);
-        if (timeoutId) {
-          window.clearTimeout(timeoutId);
-        }
-      };
     } catch (error) {
       setDasError(
         error instanceof Error
@@ -423,15 +616,7 @@ export default function SimulatorModePicker() {
           : "Nao foi possivel calcular o DAS.",
       );
     }
-  }, [
-    exportacaoServico,
-    faturamentoMensal,
-    rbt12,
-    selectedAnexo,
-    selectedSimplesPath,
-    shouldShowDasFields,
-    usesCurrentMonthAsRbtBase,
-  ]);
+  }
 
   return (
     <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-8">
@@ -563,7 +748,11 @@ export default function SimulatorModePicker() {
                     </span>
                     <select
                       value={selectedAnexo}
-                      onChange={(event) => setSelectedAnexo(event.target.value)}
+                      onChange={(event) => {
+                        setSelectedAnexo(event.target.value);
+                        setDasResult(null);
+                        setDasError("");
+                      }}
                       className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 focus:border-cyan-300/45"
                     >
                       <option value="">Selecione</option>
@@ -697,9 +886,13 @@ export default function SimulatorModePicker() {
                         inputMode="numeric"
                         type="text"
                         value={rbt12}
-                        onChange={(event) =>
-                          setRbt12(formatCurrencyFromDigits(event.target.value))
-                        }
+                        onChange={(event) => {
+                          setRbt12(
+                            formatCurrencyFromDigits(event.target.value),
+                          );
+                          setDasResult(null);
+                          setDasError("");
+                        }}
                         placeholder="R$ 0,00"
                         className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
                       />
@@ -729,6 +922,8 @@ export default function SimulatorModePicker() {
                           setMonthRevenues([]);
                           setIsRbtConfirmed(false);
                           setUsesCurrentMonthAsRbtBase(false);
+                          setDasResult(null);
+                          setDasError("");
                           setRbtError("");
                         }}
                         className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 focus:border-cyan-300/45"
@@ -796,6 +991,8 @@ export default function SimulatorModePicker() {
                                 ),
                               );
                               setIsRbtConfirmed(false);
+                              setDasResult(null);
+                              setDasError("");
                             }}
                             placeholder="R$ 0,00"
                             className="h-full min-w-0 flex-1 border-0 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-slate-500"
@@ -846,21 +1043,39 @@ export default function SimulatorModePicker() {
                   Informe os dados do mes.
                 </h3>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  <label className="block">
+                <div className="mt-5 grid items-end gap-4 md:grid-cols-[0.9fr_1fr_auto]">
+                  <div>
                     <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
-                      E exportacao de servico?
+                      E exportacao para o exterior?
                     </span>
-                    <select
-                      value={exportacaoServico}
-                      onChange={(event) => setExportacaoServico(event.target.value)}
-                      className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 focus:border-cyan-300/45"
-                    >
-                      <option value="">Selecione</option>
-                      <option value="sim">Sim</option>
-                      <option value="nao">Nao</option>
-                    </select>
-                  </label>
+                    <div className="mt-3 grid h-12 grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/80 p-1">
+                      {[
+                        { value: "sim", label: "Sim" },
+                        { value: "nao", label: "Nao" },
+                      ].map((option) => {
+                        const isActive = exportacaoServico === option.value;
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setExportacaoServico(option.value);
+                              setDasResult(null);
+                              setDasError("");
+                            }}
+                            className={`rounded-xl text-sm font-semibold transition-all duration-300 ${
+                              isActive
+                                ? "bg-cyan-300/15 text-white shadow-[0_0_18px_rgba(34,211,238,0.12)]"
+                                : "text-slate-500 hover:text-slate-200"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <label className="block">
                     <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
@@ -870,20 +1085,26 @@ export default function SimulatorModePicker() {
                       inputMode="numeric"
                       type="text"
                       value={faturamentoMensal}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setFaturamentoMensal(
                           formatCurrencyFromDigits(event.target.value),
-                        )
-                      }
+                        );
+                        setDasResult(null);
+                        setDasError("");
+                      }}
                       placeholder="R$ 0,00"
                       className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
                     />
                   </label>
-                </div>
 
-                <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                  <Calculator className="h-4 w-4" />
-                  Calculo automatico
+                  <button
+                    type="button"
+                    onClick={handleConfirmDas}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 md:min-w-48"
+                  >
+                    Confirmar
+                    <CheckCircle2 className="h-4 w-4" />
+                  </button>
                 </div>
 
                 {dasError ? (
@@ -901,9 +1122,64 @@ export default function SimulatorModePicker() {
                     {dasResult.fatorR ? (
                       <ResultadoDasCard
                         resultado={dasResult.fatorR}
-                        title="Alternativo como Anexo III / Fator R"
+                        title="Calculo com Fator R"
                       />
                     ) : null}
+
+                    <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+                            Resultado
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-300">
+                            Resumo do faturamento, impostos e liquido estimado.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowFinalResult((current) => !current)
+                          }
+                          className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
+                        >
+                          {showFinalResult ? "Ocultar" : "Ver resultado"}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-300 ${
+                              showFinalResult ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {showFinalResult ? (
+                        <div className="mt-4">
+                          <ResultadoFinalCard
+                            darfResult={darfResult}
+                            dasResult={dasResult}
+                            faturamentoMensal={faturamentoMensal}
+                            onCalcularDarf={handleCalcularDarf}
+                            proLabore={proLabore}
+                            proLaboreError={proLaboreError}
+                            setProLabore={(value) => {
+                              setProLabore(value);
+                              setDarfResult(null);
+                              setProLaboreError("");
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+                        Analise tributaria
+                      </p>
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                        Espaco reservado para interpretar o resultado, comparar
+                        caminhos e orientar os proximos ajustes do cenario.
+                      </p>
+                    </div>
                   </div>
                 ) : null}
               </div>

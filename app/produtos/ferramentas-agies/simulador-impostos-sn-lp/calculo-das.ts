@@ -21,11 +21,21 @@ export type DasCalculo = {
   fatorR?: DasResultado;
 };
 
+export type DarfProLaboreResultado = {
+  proLabore: number;
+  inss: number;
+  baseIrpf: number;
+  irpf: number;
+  totalDarf: number;
+};
+
 type AnexoConfig = {
   nome: string;
   aliquotas: number[];
   deducoes: number[];
 };
+
+export const PISO_PRO_LABORE_2026 = 1621;
 
 const anexos: Record<AnexoSimples, AnexoConfig> = {
   1: {
@@ -56,6 +66,16 @@ const anexos: Record<AnexoSimples, AnexoConfig> = {
 };
 
 const limitesDasFaixas = [180000, 360000, 720000, 1800000, 3600000, 4800000];
+const tabelaIrpf2026 = [
+  { limite: 2428.8, aliquota: 0, deducao: 0 },
+  { limite: 2826.65, aliquota: 0.075, deducao: 182.16 },
+  { limite: 3751.05, aliquota: 0.15, deducao: 394.16 },
+  { limite: 4664.68, aliquota: 0.225, deducao: 675.49 },
+  { limite: Infinity, aliquota: 0.275, deducao: 908.73 },
+];
+const aliquotaInssSocio = 0.11;
+const tetoInss2026 = 8475.55;
+const inssMaximo2026 = tetoInss2026 * aliquotaInssSocio;
 
 const reparticaoSimplesNacional: Record<string, Array<Record<string, number>>> = {
   "Anexo I": [
@@ -63,16 +83,16 @@ const reparticaoSimplesNacional: Record<string, Array<Record<string, number>>> =
     { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 41.5, ICMS: 34.0 },
     { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 42.0, ICMS: 33.5 },
     { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 42.0, ICMS: 33.5 },
-    { IRPJ: 13.5, CSLL: 10.0, COFINS: 28.27, "PIS/Pasep": 6.13, CPP: 42.1, ICMS: 0.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 42.0, ICMS: 33.5 },
     { IRPJ: 13.5, CSLL: 10.0, COFINS: 28.27, "PIS/Pasep": 6.13, CPP: 42.1, ICMS: 0.0 },
   ],
   "Anexo II": [
-    { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 37.5, IPI: 38.0 },
-    { IRPJ: 5.5, CSLL: 3.5, COFINS: 12.74, "PIS/Pasep": 2.76, CPP: 37.5, IPI: 38.0 },
-    { IRPJ: 5.5, CSLL: 3.5, COFINS: 13.57, "PIS/Pasep": 2.93, CPP: 37.0, IPI: 37.5 },
-    { IRPJ: 5.5, CSLL: 3.5, COFINS: 13.57, "PIS/Pasep": 2.93, CPP: 37.0, IPI: 37.5 },
-    { IRPJ: 13.5, CSLL: 10.0, COFINS: 28.27, "PIS/Pasep": 6.13, CPP: 42.1, IPI: 0.0 },
-    { IRPJ: 13.5, CSLL: 10.0, COFINS: 28.27, "PIS/Pasep": 6.13, CPP: 42.1, IPI: 0.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 11.51, "PIS/Pasep": 2.49, CPP: 37.5, IPI: 7.5, ICMS: 32.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 11.51, "PIS/Pasep": 2.49, CPP: 37.5, IPI: 7.5, ICMS: 32.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 11.51, "PIS/Pasep": 2.49, CPP: 37.5, IPI: 7.5, ICMS: 32.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 11.51, "PIS/Pasep": 2.49, CPP: 37.5, IPI: 7.5, ICMS: 32.0 },
+    { IRPJ: 5.5, CSLL: 3.5, COFINS: 11.51, "PIS/Pasep": 2.49, CPP: 37.5, IPI: 7.5, ICMS: 32.0 },
+    { IRPJ: 8.5, CSLL: 7.5, COFINS: 20.96, "PIS/Pasep": 4.54, CPP: 23.5, IPI: 35.0, ICMS: 0.0 },
   ],
   "Anexo III": [
     { IRPJ: 4.0, CSLL: 3.5, COFINS: 12.82, "PIS/Pasep": 2.78, CPP: 43.4, ISS: 33.5 },
@@ -140,8 +160,15 @@ function calcularEmAnexo({
   let valorDasFinal = 0;
   let aliquotaEfetivaFinal = aliquotaEfetivaCheia;
 
-  if (exportacaoServico && [3, 4, 5].includes(anexo)) {
-    const impostosIsentos = new Set(["PIS/Pasep", "COFINS", "ISS"]);
+  if (exportacaoServico) {
+    const impostosIsentosPorAnexo: Record<AnexoSimples, string[]> = {
+      1: ["PIS/Pasep", "COFINS", "ICMS"],
+      2: ["PIS/Pasep", "COFINS", "IPI", "ICMS"],
+      3: ["PIS/Pasep", "COFINS", "ISS"],
+      4: ["PIS/Pasep", "COFINS", "ISS"],
+      5: ["PIS/Pasep", "COFINS", "ISS"],
+    };
+    const impostosIsentos = new Set(impostosIsentosPorAnexo[anexo]);
 
     for (const [imposto, percentual] of Object.entries(reparticao)) {
       const valorImposto = valorDasCheio * (percentual / 100);
@@ -195,4 +222,44 @@ export function calcularDasSimplesNacional(input: DasInput): DasCalculo {
   }
 
   return { padrao };
+}
+
+function calcularIrrf2026(baseCalculo: number, rendimentoBruto: number) {
+  const faixa = tabelaIrpf2026.find((item) => baseCalculo <= item.limite);
+  const impostoTabela = Math.max(
+    0,
+    (baseCalculo * (faixa?.aliquota ?? 0)) - (faixa?.deducao ?? 0),
+  );
+  let redutor = 0;
+
+  if (rendimentoBruto <= 5000) {
+    redutor = impostoTabela;
+  } else if (rendimentoBruto <= 7350) {
+    redutor = Math.min(
+      Math.max(0, 978.62 - (0.133145 * rendimentoBruto)),
+      impostoTabela,
+    );
+  }
+
+  return round(Math.max(0, impostoTabela - redutor));
+}
+
+export function calcularDarfProLabore(
+  proLabore: number,
+): DarfProLaboreResultado {
+  if (!Number.isFinite(proLabore) || proLabore < PISO_PRO_LABORE_2026) {
+    throw new Error("Informe um pro-labore igual ou maior que o salario minimo.");
+  }
+
+  const inss = Math.min(proLabore * aliquotaInssSocio, inssMaximo2026);
+  const baseIrpf = proLabore - inss;
+  const irpf = calcularIrrf2026(baseIrpf, proLabore);
+
+  return {
+    proLabore: round(proLabore),
+    inss: round(inss),
+    baseIrpf: round(baseIrpf),
+    irpf,
+    totalDarf: round(inss + irpf),
+  };
 }
