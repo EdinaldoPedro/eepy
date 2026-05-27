@@ -34,7 +34,7 @@ export default function SimuladorImpostosSnLpPage() {
         </h1>
 
         <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300">
-          Estou construindo este simulador para organizar perguntas, calculos e
+          Este simulador foi feito para organizar perguntas, calculos e
           resultado em um fluxo unico. A ideia e tirar o peso da conta manual e
           deixar o cenario fiscal mais facil de conferir.
         </p>

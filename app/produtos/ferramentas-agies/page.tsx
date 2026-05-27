@@ -29,7 +29,7 @@ const tools = [
     status: "Primeira ferramenta",
     title: "Simulador de Impostos SN e LP",
     description:
-      "Comecei esta ferramenta para transformar calculos fiscais em um fluxo mais claro, visual e facil de revisar.",
+      "Ferramenta agio para transformar calculos fiscais em um fluxo mais claro, visual e facil de revisar.",
     href: "/produtos/ferramentas-agies/simulador-impostos-sn-lp",
   },
 ];
@@ -72,7 +72,7 @@ export default function FerramentasAgiesPage() {
           </h1>
 
           <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300">
-            A Linha agio e o espaco onde eu organizo ferramentas fiscais e
+            A Linha agio e o espaco onde organizo ferramentas fiscais e
             operacionais da eepy. Cada produto nasce de uma necessidade real e
             ganha uma experiencia propria, simples de acessar e facil de usar.
           </p>
