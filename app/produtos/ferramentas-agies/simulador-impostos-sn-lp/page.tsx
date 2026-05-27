@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Calculator, FileText } from "lucide-react";
+import AgioAmbientBackground from "../ui/agio-ambient-background";
 import SimulatorModePicker from "../ui/simulator-mode-picker";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 
 export default function SimuladorImpostosSnLpPage() {
   return (
-    <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-16 text-white lg:px-10">
+    <>
+      <AgioAmbientBackground variant="simulator" />
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-16 text-white lg:px-10">
       <Link
         href="/produtos/ferramentas-agies"
         className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition-colors duration-300 hover:border-white/20 hover:bg-white/8"
@@ -31,9 +34,9 @@ export default function SimuladorImpostosSnLpPage() {
         </h1>
 
         <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300">
-          Esta ferramenta vai guiar o usuario por um questionario simples,
-          calcular o cenario informado e entregar uma tela de resultado para
-          Simples Nacional ou Lucro Presumido.
+          Estou construindo este simulador para organizar perguntas, calculos e
+          resultado em um fluxo unico. A ideia e tirar o peso da conta manual e
+          deixar o cenario fiscal mais facil de conferir.
         </p>
       </section>
 
@@ -44,19 +47,19 @@ export default function SimuladorImpostosSnLpPage() {
       <section className="mt-5 grid gap-5 lg:grid-cols-3">
         {[
           {
-            title: "Responder o questionario",
+            title: "Escolher o caminho",
             description:
-              "Escolha o regime, defina Anexo ou CNAE e informe a RBT12 manual ou proporcionalizada.",
+              "Comece por Simples Nacional ou Lucro Presumido. No Simples, siga por Anexo ou CNAE; no LP, vá direto para os dados da NFS-e.",
           },
           {
-            title: "Calcular o DAS",
+            title: "Informar os dados",
             description:
-              "Informe exportacao e faturamento mensal para calcular DAS, aliquota, faixa e rateio.",
+              "A ferramenta organiza RBT12, faturamento, exportação, ISS e pró-labore opcional sem misturar os regimes.",
           },
           {
-            title: "Resultado e pro-labore",
+            title: "Fechar o cenário",
             description:
-              "Veja o liquido, calcule DARF opcional e aplique Fator R quando o pro-labore permitir.",
+              "O fechamento mostra tributos, líquido estimado, detalhes por imposto e um resumo pronto para exportar quando fizer sentido.",
           },
         ].map((step, index) => (
           <article
@@ -78,6 +81,7 @@ export default function SimuladorImpostosSnLpPage() {
           </article>
         ))}
       </section>
-    </main>
+      </main>
+    </>
   );
 }

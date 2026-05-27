@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   Sparkles,
 } from "lucide-react";
+import AgioAmbientBackground from "./ui/agio-ambient-background";
 
 export const metadata: Metadata = {
   title: "Linha agio | eepy",
@@ -17,9 +18,9 @@ export const metadata: Metadata = {
 };
 
 const productHighlights = [
-  "Ferramentas reunidas por linha",
+  "Ferramentas criadas a partir da rotina",
   "Experiencia simples para abrir e usar",
-  "Base pronta para novos produtos",
+  "Linha em evolucao dentro da eepy",
 ];
 
 const tools = [
@@ -28,7 +29,7 @@ const tools = [
     status: "Primeira ferramenta",
     title: "Simulador de Impostos SN e LP",
     description:
-      "Ferramenta da Linha agio para iniciar simulacoes de Simples Nacional e Lucro Presumido em uma interface propria.",
+      "Comecei esta ferramenta para transformar calculos fiscais em um fluxo mais claro, visual e facil de revisar.",
     href: "/produtos/ferramentas-agies/simulador-impostos-sn-lp",
   },
 ];
@@ -38,25 +39,27 @@ const productAreas = [
     icon: Calculator,
     title: "Calculadoras",
     description:
-      "Ferramentas numericas para apoiar cenarios, comparacoes e tomadas de decisao.",
+      "Crio calculadoras para tirar contas repetitivas da planilha solta e levar o usuario direto ao cenario que precisa entender.",
   },
   {
     icon: FileSpreadsheet,
     title: "Utilitarios",
     description:
-      "Recursos praticos para organizar rotinas e reduzir trabalho repetitivo.",
+      "Organizo pequenos recursos para deixar processos mais leves, padronizados e menos dependentes de memoria operacional.",
   },
   {
     icon: Blocks,
     title: "Produtos conectados",
     description:
-      "Novas ferramentas entram no mesmo padrao visual, sem perder identidade.",
+      "Mantenho as ferramentas dentro de uma mesma linguagem, para que cada nova entrega pareca parte de um produto de verdade.",
   },
 ];
 
 export default function FerramentasAgiesPage() {
   return (
-    <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-16 text-white lg:px-10">
+    <>
+      <AgioAmbientBackground variant="hub" />
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-16 text-white lg:px-10">
       <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200">
@@ -69,9 +72,9 @@ export default function FerramentasAgiesPage() {
           </h1>
 
           <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300">
-            A Linha agio concentra ferramentas da eepy em uma area de produto
-            clara, organizada e feita para crescer. Cada ferramenta tem seu
-            proprio espaco, mantendo a navegacao simples para quem vai usar.
+            A Linha agio e o espaco onde eu organizo ferramentas fiscais e
+            operacionais da eepy. Cada produto nasce de uma necessidade real e
+            ganha uma experiencia propria, simples de acessar e facil de usar.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -95,9 +98,9 @@ export default function FerramentasAgiesPage() {
             Linha agio
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            Um hub vivo para calculadoras, simuladores e utilitarios. A
-            primeira ferramenta ja esta posicionada e as proximas podem entrar
-            no mesmo modelo.
+            Meu objetivo aqui e reunir calculadoras, simuladores e utilitarios
+            em uma linha coerente. A primeira ferramenta ja mostra o formato que
+            pretendo seguir nas proximas entregas.
           </p>
           <Link
             href="/"
@@ -135,7 +138,7 @@ export default function FerramentasAgiesPage() {
                 </div>
 
                 <span className="w-fit rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-100">
-                  Em desenvolvimento
+                  Em evolucao
                 </span>
               </div>
 
@@ -152,14 +155,14 @@ export default function FerramentasAgiesPage() {
 
         <article className="surface-card rounded-[28px] border border-white/10 p-6 md:p-8">
           <p className="text-[11px] uppercase tracking-[0.26em] text-slate-400">
-            Proximas entradas
+            Linha em crescimento
           </p>
           <h2 className="mt-5 text-2xl font-semibold text-white">
-            Mais ferramentas no mesmo padrao.
+            Novas ferramentas com a mesma identidade.
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            A linha ja esta preparada para receber novas experiencias sem
-            parecer uma lista solta de links.
+            Estou construindo esta linha para crescer com consistencia: cada
+            nova ferramenta precisa ter contexto, acabamento e utilidade real.
           </p>
         </article>
       </section>
@@ -189,6 +192,7 @@ export default function FerramentasAgiesPage() {
           );
         })}
       </section>
-    </main>
+      </main>
+    </>
   );
 }

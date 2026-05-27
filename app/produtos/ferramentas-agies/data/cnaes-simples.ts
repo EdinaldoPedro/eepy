@@ -11545,7 +11545,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE AGUARDENTE DE CANA DE AÇÚCAR",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11553,7 +11553,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE OUTRAS AGUARDENTES E BEBIDAS DESTILADAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11561,7 +11561,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE VINHO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11569,7 +11569,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE MALTE, INCLUSIVE MALTE UÍSQUE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11577,7 +11577,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE CERVEJAS E CHOPES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11585,7 +11585,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE CIGARROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11593,7 +11593,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE CIGARRILHAS E CHARUTOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11601,7 +11601,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE FILTROS PARA CIGARROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11609,7 +11609,7 @@ export const cnaesSimples = [
     "descricao": "SERVIÇO DE TRATAMENTO DE MADEIRA REALIZADO SOB CONTRATO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11617,7 +11617,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE PÓLVORAS, EXPLOSIVOS E DETONANTES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11625,7 +11625,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE EQUIPAMENTO BÉLICO PESADO, EXCETO VEÍCULOS MILITARES DE COMBATE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11633,7 +11633,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE ARMAS DE FOGO, OUTRAS ARMAS  E MUNIÇÕES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11641,7 +11641,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11649,7 +11649,7 @@ export const cnaesSimples = [
     "descricao": "FABRICAÇÃO DE MOTOCICLETAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11657,7 +11657,7 @@ export const cnaesSimples = [
     "descricao": "GERAÇÃO DE ENERGIA ELÉTRICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11665,7 +11665,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE COORDENAÇÃO E CONTROLE DA OPERAÇÃO DA GERAÇÃO E TRANSMISSÃO DE ENERGIA ELÉTRICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11673,7 +11673,7 @@ export const cnaesSimples = [
     "descricao": "TRANSMISSÃO DE ENERGIA ELÉTRICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11681,7 +11681,7 @@ export const cnaesSimples = [
     "descricao": "COMÉRCIO ATACADISTA DE ENERGIA ELÉTRICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11689,7 +11689,7 @@ export const cnaesSimples = [
     "descricao": "DISTRIBUIÇÃO DE ENERGIA ELÉTRICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11697,7 +11697,7 @@ export const cnaesSimples = [
     "descricao": "INCORPORAÇÃO DE EMPREENDIMENTOS IMOBILIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11705,7 +11705,7 @@ export const cnaesSimples = [
     "descricao": "COMÉRCIO A VAREJO DE PEÇAS E ACESSÓRIOS USADOS PARA MOTOCICLETAS E MOTONETAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11713,7 +11713,7 @@ export const cnaesSimples = [
     "descricao": "COMÉRCIO ATACADISTA DE BEBIDAS NÃO ESPECIFICADAS ANTERIORMENTE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11721,7 +11721,7 @@ export const cnaesSimples = [
     "descricao": "COMÉRCIO ATACADISTA DE CIGARROS, CIGARRILHAS E CHARUTOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11729,7 +11729,7 @@ export const cnaesSimples = [
     "descricao": "TRANSPORTE FERROVIÁRIO DE PASSAGEIROS INTERMUNICIPAL E INTERESTADUAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11737,7 +11737,7 @@ export const cnaesSimples = [
     "descricao": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERMUNICIPAL, EXCETO EM REGIÃO METROPOLITANA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11745,7 +11745,7 @@ export const cnaesSimples = [
     "descricao": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERESTADUAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11753,7 +11753,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DO CORREIO NACIONAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11761,7 +11761,7 @@ export const cnaesSimples = [
     "descricao": "BARES E OUTROS ESTABELECIMENTOS ESPECIALIZADOS EM SERVIR BEBIDAS, COM ENTRETENIMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11769,7 +11769,7 @@ export const cnaesSimples = [
     "descricao": "BANCO CENTRAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11777,7 +11777,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS COMERCIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11785,7 +11785,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS MÚLTIPLOS, COM CARTEIRA COMERCIAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11793,7 +11793,7 @@ export const cnaesSimples = [
     "descricao": "CAIXAS ECONÔMICAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11801,7 +11801,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS COOPERATIVOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11809,7 +11809,7 @@ export const cnaesSimples = [
     "descricao": "COOPERATIVAS CENTRAIS DE CRÉDITO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11817,7 +11817,7 @@ export const cnaesSimples = [
     "descricao": "COOPERATIVAS DE CRÉDITO MÚTUO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11825,7 +11825,7 @@ export const cnaesSimples = [
     "descricao": "COOPERATIVAS DE CRÉDITO RURAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11833,7 +11833,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS MÚLTIPLOS, SEM CARTEIRA COMERCIAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11841,7 +11841,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS DE INVESTIMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11849,7 +11849,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS DE DESENVOLVIMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11857,7 +11857,7 @@ export const cnaesSimples = [
     "descricao": "AGÊNCIAS DE FOMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11865,7 +11865,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE CRÉDITO IMOBILIÁRIO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11873,7 +11873,7 @@ export const cnaesSimples = [
     "descricao": "ASSOCIAÇÕES DE POUPANÇA E EMPRÉSTIMO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11881,7 +11881,7 @@ export const cnaesSimples = [
     "descricao": "COMPANHIAS HIPOTECÁRIAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11889,7 +11889,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO - FINANCEIRAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11897,7 +11897,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE CRÉDITO AO MICROEMPREENDEDOR",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11905,7 +11905,7 @@ export const cnaesSimples = [
     "descricao": "BANCOS DE CÂMBIO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11913,7 +11913,7 @@ export const cnaesSimples = [
     "descricao": "OUTRAS INSTITUIÇÕES DE INTERMEDIAÇÃO NÃO MONETÁRIA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11921,7 +11921,7 @@ export const cnaesSimples = [
     "descricao": "ARRENDAMENTO MERCANTIL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11929,7 +11929,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE CAPITALIZAÇÃO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11937,7 +11937,7 @@ export const cnaesSimples = [
     "descricao": "HOLDINGS DE INSTITUIÇÕES FINANCEIRAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11945,7 +11945,7 @@ export const cnaesSimples = [
     "descricao": "HOLDINGS DE INSTITUIÇÕES NÃO FINANCEIRAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11953,7 +11953,7 @@ export const cnaesSimples = [
     "descricao": "OUTRAS SOCIEDADES DE PARTICIPAÇÃO, EXCETO HOLDINGS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11961,7 +11961,7 @@ export const cnaesSimples = [
     "descricao": "FUNDOS DE INVESTIMENTO, EXCETO PREVIDENCIÁRIOS E IMOBILIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11969,7 +11969,7 @@ export const cnaesSimples = [
     "descricao": "FUNDOS DE INVESTIMENTO PREVIDENCIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11977,7 +11977,7 @@ export const cnaesSimples = [
     "descricao": "FUNDOS DE INVESTIMENTO IMOBILIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11985,7 +11985,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE FOMENTO MERCANTIL - FACTORING",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -11993,7 +11993,7 @@ export const cnaesSimples = [
     "descricao": "SECURITIZAÇÃO DE CRÉDITOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12001,7 +12001,7 @@ export const cnaesSimples = [
     "descricao": "CLUBES DE INVESTIMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12009,7 +12009,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADES DE INVESTIMENTO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12017,7 +12017,7 @@ export const cnaesSimples = [
     "descricao": "FUNDO GARANTIDOR DE CRÉDITO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12025,7 +12025,7 @@ export const cnaesSimples = [
     "descricao": "CAIXAS DE FINANCIAMENTO DE CORPORAÇÕES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12033,7 +12033,7 @@ export const cnaesSimples = [
     "descricao": "CONCESSÃO DE CRÉDITO PELAS OSCIP",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12041,7 +12041,7 @@ export const cnaesSimples = [
     "descricao": "OUTRAS ATIVIDADES DE SERVIÇOS FINANCEIROS NÃO ESPECIFICADAS ANTERIORMENTE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12049,7 +12049,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADE SEGURADORA DE SEGUROS VIDA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12057,7 +12057,7 @@ export const cnaesSimples = [
     "descricao": "PLANOS DE AUXÍLIO FUNERAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12065,7 +12065,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADE SEGURADORA DE SEGUROS NÃO VIDA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12073,7 +12073,7 @@ export const cnaesSimples = [
     "descricao": "SOCIEDADE SEGURADORA DE SEGUROS SAÚDE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12081,7 +12081,7 @@ export const cnaesSimples = [
     "descricao": "RESSEGUROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12089,7 +12089,7 @@ export const cnaesSimples = [
     "descricao": "PREVIDÊNCIA COMPLEMENTAR FECHADA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12097,7 +12097,7 @@ export const cnaesSimples = [
     "descricao": "PREVIDÊNCIA COMPLEMENTAR ABERTA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12105,7 +12105,7 @@ export const cnaesSimples = [
     "descricao": "BOLSA DE VALORES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12113,7 +12113,7 @@ export const cnaesSimples = [
     "descricao": "BOLSA DE MERCADORIAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12121,7 +12121,7 @@ export const cnaesSimples = [
     "descricao": "BOLSA DE MERCADORIAS E FUTUROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12129,7 +12129,7 @@ export const cnaesSimples = [
     "descricao": "ADMINISTRAÇÃO DE MERCADOS DE BALCÃO ORGANIZADOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12137,7 +12137,7 @@ export const cnaesSimples = [
     "descricao": "CORRETORAS DE TÍTULOS E VALORES MOBILIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12145,7 +12145,7 @@ export const cnaesSimples = [
     "descricao": "DISTRIBUIDORAS DE TÍTULOS E VALORES MOBILIÁRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12153,7 +12153,7 @@ export const cnaesSimples = [
     "descricao": "CORRETORAS DE CÂMBIO",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12161,7 +12161,7 @@ export const cnaesSimples = [
     "descricao": "CORRETORAS DE CONTRATOS DE MERCADORIAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12169,7 +12169,7 @@ export const cnaesSimples = [
     "descricao": "AGENTES DE INVESTIMENTOS EM APLICAÇÕES FINANCEIRAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12177,7 +12177,7 @@ export const cnaesSimples = [
     "descricao": "SERVIÇOS DE LIQUIDAÇÃO E CUSTÓDIA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12185,7 +12185,7 @@ export const cnaesSimples = [
     "descricao": "REPRESENTAÇÕES DE BANCOS ESTRANGEIROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12193,7 +12193,7 @@ export const cnaesSimples = [
     "descricao": "CAIXAS ELETRÔNICOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12201,7 +12201,7 @@ export const cnaesSimples = [
     "descricao": "ALUGUEL DE IMÓVEIS PRÓPRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12209,7 +12209,7 @@ export const cnaesSimples = [
     "descricao": "LOTEAMENTO DE IMÓVEIS PRÓPRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12217,7 +12217,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES AUXILIARES DA JUSTIÇA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12225,7 +12225,7 @@ export const cnaesSimples = [
     "descricao": "CARTÓRIOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12233,7 +12233,7 @@ export const cnaesSimples = [
     "descricao": "LOCAÇÃO DE MÃO DE OBRA TEMPORÁRIA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12241,7 +12241,7 @@ export const cnaesSimples = [
     "descricao": "FORNECIMENTO E GESTÃO DE RECURSOS HUMANOS PARA TERCEIROS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12249,7 +12249,7 @@ export const cnaesSimples = [
     "descricao": "CONDOMÍNIOS PREDIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12257,7 +12257,7 @@ export const cnaesSimples = [
     "descricao": "LEILOEIROS INDEPENDENTES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12265,7 +12265,7 @@ export const cnaesSimples = [
     "descricao": "ADMINISTRAÇÃO PÚBLICA EM GERAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12273,7 +12273,7 @@ export const cnaesSimples = [
     "descricao": "REGULAÇÃO DAS ATIVIDADES DE SAÚDE, EDUCAÇÃO, SERVIÇOS CULTURAIS E OUTROS SERVIÇOS SOCIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12281,7 +12281,7 @@ export const cnaesSimples = [
     "descricao": "REGULAÇÃO DAS ATIVIDADES ECONÔMICAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12289,7 +12289,7 @@ export const cnaesSimples = [
     "descricao": "RELAÇÕES EXTERIORES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12297,7 +12297,7 @@ export const cnaesSimples = [
     "descricao": "DEFESA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12305,7 +12305,7 @@ export const cnaesSimples = [
     "descricao": "JUSTIÇA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12313,7 +12313,7 @@ export const cnaesSimples = [
     "descricao": "SEGURANÇA E ORDEM PÚBLICA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12321,7 +12321,7 @@ export const cnaesSimples = [
     "descricao": "DEFESA CIVIL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12329,7 +12329,7 @@ export const cnaesSimples = [
     "descricao": "SEGURIDADE SOCIAL OBRIGATÓRIA",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12337,7 +12337,7 @@ export const cnaesSimples = [
     "descricao": "ADMINISTRAÇÃO DE CAIXAS ESCOLARES",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12345,7 +12345,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ORGANIZAÇÕES ASSOCIATIVAS PATRONAIS E EMPRESARIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12353,7 +12353,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE FISCALIZAÇÃO PROFISSIONAL",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12361,7 +12361,7 @@ export const cnaesSimples = [
     "descricao": "OUTRAS ATIVIDADES ASSOCIATIVAS PROFISSIONAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12369,7 +12369,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ORGANIZAÇÕES SINDICAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12377,7 +12377,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ASSOCIAÇÕES DE DEFESA DE DIREITOS SOCIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12385,7 +12385,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ORGANIZAÇÕES RELIGIOSAS OU FILOSÓFICAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12393,7 +12393,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ORGANIZAÇÕES POLÍTICAS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12401,7 +12401,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES DE ORGANIZAÇÕES ASSOCIATIVAS LIGADAS À CULTURA E À ARTE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12409,7 +12409,7 @@ export const cnaesSimples = [
     "descricao": "ATIVIDADES ASSOCIATIVAS NÃO ESPECIFICADAS ANTERIORMENTE",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12417,7 +12417,7 @@ export const cnaesSimples = [
     "descricao": "SERVIÇOS DOMÉSTICOS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {
@@ -12425,7 +12425,7 @@ export const cnaesSimples = [
     "descricao": "ORGANISMOS INTERNACIONAIS E OUTRAS INSTITUIÇÕES EXTRATERRITORIAIS",
     "anexoPadrao": null,
     "anexosPossiveis": [],
-    "observacao": "nan",
+    "observacao": "Atividade com restricao/vedacao para seguir no Simples Nacional nesta simulacao.",
     "permitido": false
   },
   {

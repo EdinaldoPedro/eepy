@@ -92,7 +92,7 @@ const catalogItems = [
     status: "Dentro e fora da eepy",
     title: "Projetos operacionais e automações",
     description:
-      "Aqui entram projetos ligados à melhoria de processos, apoio administrativo e desenvolvimento operacional. Alguns serão independentes, outros podem viver no ecossistema da eepy.",
+      "Reuno aqui projetos que nasceram da rotina real: melhorias de processo, apoio administrativo e solucoes que conectam operacao, fiscal e desenvolvimento.",
     path: "/projetos/operacao-e-automacoes",
     items: ["Processos", "Automações", "Projetos aplicados"],
   },
@@ -101,7 +101,7 @@ const catalogItems = [
 const principles = [
   "Vivência fiscal e administrativa na prática.",
   "Base técnica em TI, redes e manutenção.",
-  "Portfólio preparado para serviços e produtos próprios.",
+  "Servicos e produtos proprios com foco em uso real.",
 ];
 
 const rainIcons: LucideIcon[] = [
@@ -605,9 +605,10 @@ export default function PortfolioShowcase() {
 
             <SurfaceCard className="p-6 md:p-7">
               <p className="text-sm leading-7 text-slate-300">
-                Neste primeiro momento, os cards funcionam como caminhos
-                reservados. Alguns produtos serão independentes, como o SaaS, e
-                outros podem crescer dentro do próprio ecossistema da eepy.
+                Eu organizo este espaco como uma vitrine viva do que estou
+                construindo. Alguns produtos funcionam de forma independente,
+                como o SaaS, e outros crescem dentro do proprio ecossistema da
+                eepy.
               </p>
             </SurfaceCard>
           </div>

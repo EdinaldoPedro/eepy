@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  Download,
   FileText,
   Layers3,
   Search,
@@ -14,11 +15,13 @@ import {
 import {
   calcularDarfProLabore,
   calcularDasSimplesNacional,
+  calcularLucroPresumido,
   PISO_PRO_LABORE_2026,
   type AnexoSimples,
   type DarfProLaboreResultado,
   type DasCalculo,
   type DasResultado,
+  type LucroPresumidoResultado,
 } from "../simulador-impostos-sn-lp/calculo-das";
 import {
   cnaesSimples,
@@ -135,22 +138,6 @@ function normalizeSearch(value: string) {
     .trim();
 }
 
-function hasCommonPracticeFor(value: string, word: string) {
-  const normalized = normalizeSearch(value);
-
-  return normalized.includes("pratica mais comum") && normalized.includes(word);
-}
-
-function hasSameAnexos(
-  anexos: Array<1 | 2 | 3 | 4 | 5>,
-  expected: Array<1 | 2 | 3 | 4 | 5>,
-) {
-  return (
-    anexos.length === expected.length &&
-    expected.every((anexo) => anexos.includes(anexo))
-  );
-}
-
 function formatCnae(cnae: string) {
   return cnae.replace(/^(\d{4})(\d)(\d{2})$/, "$1-$2/$3");
 }
@@ -241,6 +228,245 @@ function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function openPrintablePdf(title: string, body: string) {
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) {
+    return;
+  }
+
+  printWindow.document.write(`<!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          @page { margin: 8mm; size: A4 portrait; }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            background: #f6f8fb;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9.5px;
+            line-height: 1.32;
+            padding: 0;
+          }
+          header {
+            align-items: flex-start;
+            background:
+              radial-gradient(circle at 88% 8%, rgba(249,115,22,0.32), transparent 26%),
+              radial-gradient(circle at 16% 0%, rgba(103,232,249,0.26), transparent 30%),
+              linear-gradient(135deg, #07111f 0%, #111827 58%, #1e293b 100%);
+            border: 1px solid rgba(15,23,42,0.12);
+            border-radius: 18px;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            overflow: hidden;
+            padding: 13px 15px;
+            position: relative;
+          }
+          header:after {
+            background: linear-gradient(90deg, #67e8f9, #f97316);
+            bottom: 0;
+            content: "";
+            height: 3px;
+            left: 0;
+            position: absolute;
+            right: 0;
+          }
+          h1 {
+            font-size: 20px;
+            letter-spacing: -0.01em;
+            line-height: 1.05;
+            margin: 7px 0 5px;
+          }
+          h2 {
+            color: #0f172a;
+            font-size: 9px;
+            letter-spacing: 0.18em;
+            margin: 0 0 7px;
+            text-transform: uppercase;
+          }
+          p { margin: 2px 0; }
+          table {
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            width: 100%;
+          }
+          th, td {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-top: 1px solid #e2e8f0;
+            padding: 5px 7px;
+            text-align: left;
+          }
+          th {
+            border-left: 1px solid #e2e8f0;
+            border-radius: 9px 0 0 9px;
+            color: #475569;
+            font-size: 7.8px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            width: 56%;
+          }
+          td {
+            border-radius: 0 9px 9px 0;
+            border-right: 1px solid #e2e8f0;
+            color: #0f172a;
+            font-size: 9.5px;
+            font-weight: 800;
+          }
+          .brand {
+            align-items: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 999px;
+            display: inline-flex;
+            gap: 7px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            padding: 5px 8px;
+            text-transform: uppercase;
+          }
+          .brand-mark {
+            background: linear-gradient(135deg, #67e8f9, #f97316);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+            border-radius: 999px;
+            display: inline-block;
+            height: 10px;
+            width: 10px;
+          }
+          header .muted {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            color: #dbeafe;
+            font-size: 8.5px;
+            padding: 5px 8px;
+            white-space: nowrap;
+          }
+          .muted { color: #64748b; font-size: 8.5px; }
+          .highlight {
+            display: grid;
+            gap: 7px;
+            grid-template-columns: repeat(3, 1fr);
+            margin-bottom: 8px;
+          }
+          .highlight p {
+            background: #ffffff;
+            border: 1px solid #dbeafe;
+            border-radius: 13px;
+            box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+            font-size: 9.5px;
+            min-height: 48px;
+            padding: 8px 9px;
+          }
+          .highlight p:first-child { border-color: #67e8f9; }
+          .highlight p:last-child { border-color: #fed7aa; }
+          .highlight strong {
+            color: #64748b;
+            display: block;
+            font-size: 7.6px;
+            letter-spacing: 0.1em;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+          }
+          .grid {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: 1fr 1fr;
+          }
+          .grid > section {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            box-shadow: 0 8px 22px rgba(15,23,42,0.05);
+            padding: 10px;
+          }
+          .tax-grid {
+            display: grid;
+            gap: 5px;
+            grid-template-columns: repeat(3, 1fr);
+          }
+          .tax-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 6px 7px;
+          }
+          .tax-card strong {
+            color: #334155;
+            display: block;
+            font-size: 8px;
+            letter-spacing: 0.05em;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+          }
+          .tax-card p {
+            color: #0f172a;
+            font-size: 10px;
+            font-weight: 800;
+          }
+          .tax-card span {
+            color: #64748b;
+            display: block;
+            font-size: 7.8px;
+          }
+          .note {
+            background: linear-gradient(135deg, #ecfeff, #fff7ed);
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            margin-top: 7px;
+            padding: 7px 8px;
+          }
+          .note strong {
+            color: #0f172a;
+            display: block;
+            font-size: 8.5px;
+            margin-bottom: 3px;
+          }
+          .footer {
+            align-items: flex-end;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 3px;
+          }
+          .refs {
+            border-right: 3px solid #f97316;
+            padding-right: 8px;
+            text-align: right;
+          }
+          .refs strong { color: #0f172a; }
+          @media print { button { display: none; } }
+        </style>
+      </head>
+      <body>
+        ${body}
+        <script>
+          window.addEventListener("load", () => {
+            window.print();
+          });
+        </script>
+      </body>
+    </html>`);
+  printWindow.document.close();
+}
+
 function ResultadoDasCard({
   resultado,
   title,
@@ -308,6 +534,7 @@ function ResultadoDasCard({
 function ResultadoFinalCard({
   darfResult,
   dasResult,
+  exportacaoServico,
   faturamentoMensal,
   onCalcularDarf,
   proLabore,
@@ -316,6 +543,7 @@ function ResultadoFinalCard({
 }: {
   darfResult: DarfProLaboreResultado | null;
   dasResult: DasCalculo;
+  exportacaoServico: boolean;
   faturamentoMensal: string;
   onCalcularDarf: () => void;
   proLabore: string;
@@ -334,8 +562,25 @@ function ResultadoFinalCard({
     : dasResult.padrao;
   const das = resultadoDasAplicado.valorDasAPagar;
   const darf = darfResult?.totalDarf ?? 0;
+  const darfLpMinimo = calcularDarfProLabore(PISO_PRO_LABORE_2026).totalDarf;
   const cargaTributaria = das + darf;
   const liquido = Math.max(0, faturamento - das - darf);
+  const comparativoLp =
+    faturamento > 0
+      ? calcularLucroPresumido({
+          valorNfse: faturamento,
+          faturamentoMensal: faturamento,
+          exportacaoServico,
+          aliquotaIssPercent: exportacaoServico ? 0 : 5,
+        })
+      : null;
+  const cargaLp = (comparativoLp?.totalTributos ?? 0) + darfLpMinimo;
+  const liquidoLp = Math.max(0, faturamento - cargaLp);
+  const economiaSn = cargaLp - cargaTributaria;
+  const regimeSugerido =
+    comparativoLp && cargaTributaria <= cargaLp
+      ? "Simples Nacional"
+      : "Lucro Presumido";
   const linhas = [
     { label: "Faturamento", value: faturamento },
     { label: "DAS", value: -das },
@@ -344,8 +589,141 @@ function ResultadoFinalCard({
     { label: "Liquido", value: liquido },
   ];
 
+  function handleExportSnPdf() {
+    if (!comparativoLp) {
+      return;
+    }
+
+    const resumoRows = [
+      [
+        "Regra aplicada no Simples",
+        resultadoDasAplicado.anexoUsado === 3 && dasResult.fatorR && aplicaFatorR
+          ? "Anexo III / Fator R"
+          : `Anexo ${resultadoDasAplicado.anexoUsado}`,
+      ],
+      ["Faturamento mensal", formatCurrency(faturamento)],
+      ["DAS", formatCurrency(das)],
+      ["DARF pro-labore no Simples", formatCurrency(darf)],
+      [
+        "Carga SN",
+        `${formatCurrency(cargaTributaria)} (${formatPercent(
+          (cargaTributaria / faturamento) * 100,
+        )})`,
+      ],
+      ["Liquido SN", formatCurrency(liquido)],
+      [
+        "Carga LP estimada",
+        `${formatCurrency(cargaLp)} (${formatPercent(
+          (cargaLp / faturamento) * 100,
+        )})`,
+      ],
+      [
+        "DARF no LP pela base minima opcional",
+        `${formatCurrency(darfLpMinimo)} sobre pro-labore de ${formatCurrency(
+          PISO_PRO_LABORE_2026,
+        )}`,
+      ],
+      ["Liquido LP estimado", formatCurrency(liquidoLp)],
+      ["Sugestao pelo menor custo", regimeSugerido],
+    ];
+    const snRateioRows = Object.entries(resultadoDasAplicado.rateio)
+      .map(
+        ([tributo, valor]) =>
+          `<div class="tax-card"><strong>${escapeHtml(
+            tributo,
+          )}</strong><p>${valor === 0 ? "Isento" : formatCurrency(
+            valor,
+          )}</p></div>`,
+      )
+      .join("");
+    const lpRateioRows = Object.entries(comparativoLp.rateio)
+      .map(
+        ([tributo, valor]) =>
+          `<div class="tax-card"><strong>${escapeHtml(
+            tributo,
+          )}</strong><p>${valor === 0 ? "Isento" : formatCurrency(
+            valor,
+          )}</p><span>${formatPercent(
+            comparativoLp.percentuais[tributo] ?? 0,
+          )}</span></div>`,
+      )
+      .join("");
+    const body = `
+      <header>
+        <div>
+          <div class="brand"><span class="brand-mark"></span> eepy</div>
+          <h1>Resumo fiscal - Simples Nacional</h1>
+          <p>Comparativo resumido entre Simples Nacional e Lucro Presumido.</p>
+        </div>
+        <p class="muted">${new Date().toLocaleDateString("pt-BR")}</p>
+      </header>
+
+      <section class="highlight">
+        <p><strong>Regime sugerido</strong><br />${escapeHtml(regimeSugerido)}</p>
+        <p><strong>Carga SN</strong><br />${formatCurrency(cargaTributaria)}</p>
+        <p><strong>Carga LP</strong><br />${formatCurrency(cargaLp)}</p>
+      </section>
+
+      <div class="grid">
+        <section>
+          <h2>Resumo do cenario</h2>
+          <table>
+            <tbody>
+              ${resumoRows
+                .map(
+                  ([label, value]) =>
+                    `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <div class="note">
+            <strong>Leitura rapida</strong>
+            <p>${
+              economiaSn >= 0
+                ? `O Simples Nacional ficou menor por ${formatCurrency(economiaSn)} neste cenario.`
+                : `O Lucro Presumido ficou menor por ${formatCurrency(Math.abs(economiaSn))} neste cenario.`
+            }</p>
+          </div>
+        </section>
+
+        <section>
+          <h2>Rateio SN</h2>
+          <div class="tax-grid">${snRateioRows}</div>
+          <h2>LP estimado</h2>
+          <div class="tax-grid">${lpRateioRows}</div>
+          <div class="note">
+            <strong>Premissa LP</strong>
+            <p>O faturamento mensal foi considerado como NFS-e do mes e tambem como media para estimar o trimestre. Quando nao ha exportacao, o ISS do LP foi considerado a 5%. O pro-labore do LP foi considerado pela base minima opcional de ${formatCurrency(PISO_PRO_LABORE_2026)}, independente do valor escolhido no Simples.</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="footer">
+        <p class="muted">Estimativa para apoio a analise. A validacao final depende do contexto fiscal completo.</p>
+        <div class="refs">
+          <p><strong>www.eepy.com.br</strong></p>
+          <p>linkedin.com/in/edinaldo-pedro</p>
+        </div>
+      </div>
+    `;
+
+    openPrintablePdf("Resumo fiscal - Simples Nacional", body);
+  }
+
   return (
     <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={handleExportSnPdf}
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-all duration-300 hover:border-cyan-300/40 hover:bg-cyan-300/14"
+        >
+          Exportar PDF
+          <Download className="h-4 w-4" />
+        </button>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr]">
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
@@ -455,6 +833,556 @@ function ResultadoFinalCard({
           </div>
         </div>
       </div>
+
+    </article>
+  );
+}
+
+function AnaliseTributariaSimplesCard({
+  darfResult,
+  dasResult,
+  exportacaoServico,
+  faturamentoMensal,
+  setShowTaxAnalysis,
+  showTaxAnalysis,
+}: {
+  darfResult: DarfProLaboreResultado | null;
+  dasResult: DasCalculo;
+  exportacaoServico: boolean;
+  faturamentoMensal: string;
+  setShowTaxAnalysis: (value: boolean) => void;
+  showTaxAnalysis: boolean;
+}) {
+  const faturamento = parseCurrency(faturamentoMensal);
+  const fatorRMinimo = roundCurrency(faturamento * 0.28);
+  const aplicaFatorR =
+    Boolean(dasResult.fatorR) &&
+    Boolean(darfResult) &&
+    (darfResult?.proLabore ?? 0) >= fatorRMinimo;
+  const resultadoDasAplicado = aplicaFatorR
+    ? (dasResult.fatorR ?? dasResult.padrao)
+    : dasResult.padrao;
+  const das = resultadoDasAplicado.valorDasAPagar;
+  const darf = darfResult?.totalDarf ?? 0;
+  const darfLpMinimo = calcularDarfProLabore(PISO_PRO_LABORE_2026).totalDarf;
+  const cargaTributaria = das + darf;
+  const comparativoLp =
+    faturamento > 0
+      ? calcularLucroPresumido({
+          valorNfse: faturamento,
+          faturamentoMensal: faturamento,
+          exportacaoServico,
+          aliquotaIssPercent: exportacaoServico ? 0 : 5,
+        })
+      : null;
+  const cargaLp = (comparativoLp?.totalTributos ?? 0) + darfLpMinimo;
+  const economiaSn = cargaLp - cargaTributaria;
+  const regimeSugerido =
+    comparativoLp && cargaTributaria <= cargaLp
+      ? "Simples Nacional"
+      : "Lucro Presumido";
+
+  if (!comparativoLp) {
+    return null;
+  }
+
+  return (
+    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+            Analise tributaria
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Comparativo estimado entre Simples Nacional e Lucro Presumido.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowTaxAnalysis(!showTaxAnalysis)}
+          className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
+        >
+          {showTaxAnalysis ? "Ocultar" : "Ver analise"}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-300 ${
+              showTaxAnalysis ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {showTaxAnalysis ? (
+        <div className="mt-4">
+          <div>
+            <h3 className="text-xl font-semibold text-white">
+              Sugestao: {regimeSugerido}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              O Simples Nacional calculado acima foi comparado com uma
+              estimativa de Lucro Presumido usando o mesmo faturamento mensal.
+              Quando nao ha exportacao, o ISS do LP foi considerado a 5%. Para
+              o LP, foi considerado um pro-labore minimo opcional de{" "}
+              {formatCurrency(PISO_PRO_LABORE_2026)}, separado do valor escolhido
+              no Simples.
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/8 p-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100">
+                Simples Nacional
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {formatCurrency(cargaTributaria)}
+              </p>
+              <p className="mt-1 text-xs text-cyan-100/70">
+                {formatPercent((cargaTributaria / faturamento) * 100)} de carga
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                Lucro Presumido estimado
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {formatCurrency(cargaLp)}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                {formatPercent((cargaLp / faturamento) * 100)} de carga
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-orange-300/20 bg-orange-400/10 p-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-orange-100">
+                Diferenca
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {formatCurrency(Math.abs(economiaSn))}
+              </p>
+              <p className="mt-1 text-xs text-orange-100/75">
+                {economiaSn >= 0
+                  ? "Economia estimada no Simples"
+                  : "Economia estimada no Lucro Presumido"}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function ResultadoLucroPresumidoCard({
+  resultado,
+}: {
+  resultado: LucroPresumidoResultado;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const linhasResumo = [
+    { label: "Valor da NFS-e", value: resultado.valorNfse },
+    { label: "Tributos", value: -resultado.totalTributos },
+    { label: "Liquido estimado", value: resultado.liquidoNota },
+  ];
+
+  return (
+    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+            Resultado LP
+          </p>
+          <p className="mt-2 text-3xl font-semibold text-white">
+            {formatCurrency(resultado.totalTributos)}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Carga estimada de {formatPercent(resultado.aliquotaEfetivaPercent)}
+            sobre a NFS-e.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
+        >
+          {isExpanded ? "Ocultar" : "Detalhes"}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-300 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2 md:grid-cols-3">
+        {linhasResumo.map((linha) => {
+          const isDiscount = linha.value < 0;
+
+          return (
+            <div
+              key={linha.label}
+              className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3"
+            >
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                {linha.label}
+              </p>
+              <p
+                className={`mt-2 text-lg font-semibold ${
+                  isDiscount ? "text-orange-100" : "text-white"
+                }`}
+              >
+                {isDiscount ? "- " : ""}
+                {formatCurrency(Math.abs(linha.value))}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {isExpanded ? (
+        <div className="mt-4 grid gap-3">
+          <div className="grid gap-2 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                Receita trimestral
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatCurrency(resultado.receitaTrimestralEstimada)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                Base presumida
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatCurrency(resultado.basePresumidaTrimestral)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                Proporcao da nota
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatPercent(resultado.proporcaoNfse)}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-3 text-sm leading-6 text-slate-200">
+            Para IRPJ e CSLL, o faturamento mensal foi considerado como media do
+            trimestre:
+            {` ${formatCurrency(resultado.faturamentoMensal)} x 3 = ${formatCurrency(
+              resultado.receitaTrimestralEstimada,
+            )}`}. A NFS-e entra proporcionalmente dentro desse trimestre.
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                IRPJ trimestral
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatCurrency(resultado.irpjTrimestral)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                CSLL trimestral
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatCurrency(resultado.csllTrimestral)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                Adicional IRPJ
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {formatCurrency(resultado.irpjAdicionalTrimestral)}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-cyan-200">
+              Rateio por tributo
+            </p>
+            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {Object.entries(resultado.rateio).map(([tributo, valor]) => (
+                <div
+                  key={tributo}
+                  className="rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2 text-xs"
+                >
+                  <span className="block truncate text-slate-300">
+                    {tributo}
+                  </span>
+                  <span className="mt-1 block truncate font-semibold text-white">
+                    {valor === 0 ? "Isento" : formatCurrency(valor)}
+                  </span>
+                  <span className="mt-1 block truncate text-slate-500">
+                    {formatPercent(resultado.percentuais[tributo] ?? 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function ResultadoFinalLucroPresumidoCard({
+  darfResult,
+  lpResult,
+  onCalcularDarf,
+  proLabore,
+  proLaboreError,
+  setProLabore,
+}: {
+  darfResult: DarfProLaboreResultado | null;
+  lpResult: LucroPresumidoResultado;
+  onCalcularDarf: () => void;
+  proLabore: string;
+  proLaboreError: string;
+  setProLabore: (value: string) => void;
+}) {
+  const darf = darfResult?.totalDarf ?? 0;
+  const impostosMensais = ["PIS", "COFINS", "ISS"];
+  const impostosTrimestrais = ["CSLL", "IRPJ", "IRPJ adicional"];
+  const totalMensalNota = impostosMensais.reduce(
+    (sum, imposto) => sum + (lpResult.rateio[imposto] ?? 0),
+    0,
+  );
+  const totalTrimestralNota = impostosTrimestrais.reduce(
+    (sum, imposto) => sum + (lpResult.rateio[imposto] ?? 0),
+    0,
+  );
+  const totalComDarf = lpResult.totalTributos + darf;
+  const liquidoComDarf = Math.max(0, lpResult.valorNfse - totalComDarf);
+  const cargaTotalPercent = (totalComDarf / lpResult.valorNfse) * 100;
+
+  function handleExportPdf() {
+    const rows = [
+      ["Valor da NFS-e", formatCurrency(lpResult.valorNfse)],
+      ["Faturamento mensal informado", formatCurrency(lpResult.faturamentoMensal)],
+      [
+        "Receita trimestral estimada",
+        formatCurrency(lpResult.receitaTrimestralEstimada),
+      ],
+      [
+        "Base presumida trimestral",
+        formatCurrency(lpResult.basePresumidaTrimestral),
+      ],
+      ["Impostos mensais da nota", formatCurrency(totalMensalNota)],
+      [
+        "IRPJ/CSLL proporcionais ao trimestre",
+        formatCurrency(totalTrimestralNota),
+      ],
+      ["DARF pro-labore", formatCurrency(darf)],
+      ["Carga tributaria total", formatCurrency(totalComDarf)],
+      ["Liquido estimado", formatCurrency(liquidoComDarf)],
+    ];
+    const rateioRows = Object.entries(lpResult.rateio)
+      .map(
+        ([tributo, valor]) =>
+          `<div class="tax-card"><strong>${escapeHtml(
+            tributo,
+          )}</strong><p>${formatCurrency(
+            valor,
+          )}</p><span>${formatPercent(
+            lpResult.percentuais[tributo] ?? 0,
+          )} sobre a NFS-e</span></div>`,
+      )
+      .join("");
+    const body = `
+      <header>
+        <div>
+          <div class="brand"><span class="brand-mark"></span> eepy</div>
+          <h1>Resumo fiscal - Lucro Presumido</h1>
+          <p>Analise resumida gerada pelo Simulador de Impostos SN e LP.</p>
+        </div>
+        <p class="muted">${new Date().toLocaleDateString("pt-BR")}</p>
+      </header>
+
+      <section class="highlight">
+        <p><strong>Carga total</strong><br />${formatCurrency(totalComDarf)}</p>
+        <p><strong>Percentual</strong><br />${formatPercent(cargaTotalPercent)}</p>
+        <p><strong>Liquido estimado</strong><br />${formatCurrency(liquidoComDarf)}</p>
+      </section>
+
+      <div class="grid">
+        <section>
+          <h2>Resumo do cenario</h2>
+          <table>
+            <tbody>
+              ${rows
+                .map(
+                  ([label, value]) =>
+                    `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Rateio por tributo</h2>
+          <div class="tax-grid">${rateioRows}</div>
+
+          <div class="note">
+            <strong>IRPJ e CSLL</strong>
+            <p>Uso o faturamento mensal como media do trimestre: ${formatCurrency(
+              lpResult.faturamentoMensal,
+            )} x 3 = ${formatCurrency(lpResult.receitaTrimestralEstimada)}.</p>
+            <p>IRPJ, CSLL e adicional aparecem proporcionais a NFS-e, mas sao de apuracao trimestral.</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="footer">
+        <p class="muted">Estimativa para apoio a analise. A validacao final depende do contexto fiscal completo.</p>
+        <div class="refs">
+          <p><strong>www.eepy.com.br</strong></p>
+          <p>linkedin.com/in/edinaldo-pedro</p>
+        </div>
+      </div>
+    `;
+
+    openPrintablePdf("Resumo fiscal - Lucro Presumido", body);
+  }
+
+  return (
+    <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+            Pro-labore opcional
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Se quiser considerar retirada de pro-labore, informe um valor a
+            partir de {formatCurrency(PISO_PRO_LABORE_2026)} para calcular INSS,
+            IR e DARF.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <input
+              inputMode="numeric"
+              type="text"
+              value={proLabore}
+              onChange={(event) =>
+                setProLabore(formatCurrencyFromDigits(event.target.value))
+              }
+              placeholder={formatCurrency(PISO_PRO_LABORE_2026)}
+              className="h-12 rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
+            />
+            <button
+              type="button"
+              onClick={onCalcularDarf}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.18)] transition-all duration-300 hover:-translate-y-0.5"
+            >
+              Calcular DARF
+              <CheckCircle2 className="h-4 w-4" />
+            </button>
+          </div>
+
+          {proLaboreError ? (
+            <p className="mt-3 rounded-2xl border border-orange-300/20 bg-orange-400/10 p-3 text-sm text-orange-100">
+              {proLaboreError}
+            </p>
+          ) : null}
+
+          {darfResult ? (
+            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                INSS {formatCurrency(darfResult.inss)}
+              </span>
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                IR {formatCurrency(darfResult.irpf)}
+              </span>
+              <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-slate-200">
+                DARF {formatCurrency(darfResult.totalDarf)}
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/5 p-4">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-200">
+            Fechamento estimado
+          </p>
+
+          <div className="mt-3 grid gap-2">
+            <div className="rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-300">Valor da NFS-e</span>
+                <span className="font-semibold text-white">
+                  {formatCurrency(lpResult.valorNfse)}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-300">
+                  Impostos mensais da nota
+                </span>
+                <span className="font-semibold text-orange-100">
+                  - {formatCurrency(totalMensalNota)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                PIS, COFINS e ISS.
+              </p>
+            </div>
+            <div className="rounded-xl border border-orange-300/20 bg-orange-400/10 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-orange-100">
+                  IRPJ e CSLL do trimestre
+                </span>
+                <span className="font-semibold text-orange-50">
+                  - {formatCurrency(totalTrimestralNota)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-orange-100/80">
+                Valores proporcionais a NFS-e, mas apurados no fechamento
+                trimestral.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-slate-950/45 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-300">DARF pro-labore</span>
+                <span className="font-semibold text-orange-100">
+                  - {formatCurrency(darf)}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/8 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-semibold text-cyan-100">
+                  Liquido estimado
+                </span>
+                <span className="font-semibold text-white">
+                  {formatCurrency(liquidoComDarf)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-cyan-100/70">
+                Carga total: {formatCurrency(totalComDarf)} |{" "}
+                {formatPercent(cargaTotalPercent)}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-all duration-300 hover:border-cyan-300/40 hover:bg-cyan-300/14"
+          >
+            Exportar PDF
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </article>
   );
 }
@@ -489,6 +1417,15 @@ export default function SimulatorModePicker() {
   const [proLaboreError, setProLaboreError] = useState("");
   const [rbtError, setRbtError] = useState("");
   const [calculationPulse, setCalculationPulse] = useState(false);
+  const [lpValorNfse, setLpValorNfse] = useState("");
+  const [lpFaturamentoMensal, setLpFaturamentoMensal] = useState("");
+  const [lpExportacaoServico, setLpExportacaoServico] = useState("");
+  const [lpAliquotaIss, setLpAliquotaIss] = useState("");
+  const [lpResult, setLpResult] = useState<LucroPresumidoResultado | null>(
+    null,
+  );
+  const [lpError, setLpError] = useState("");
+  const [showSnTaxAnalysis, setShowSnTaxAnalysis] = useState(false);
   const shouldShowRbtStep =
     selectedSimplesPath === "anexo"
       ? Boolean(selectedAnexo)
@@ -513,39 +1450,6 @@ export default function SimulatorModePicker() {
       usesCurrentMonthAsRbtBase ||
       Boolean(rbt12)) &&
     isRbtConfirmed;
-  const isComercioServicoAmbiguo =
-    selectedCnae?.permitido &&
-    hasSameAnexos(selectedCnae.anexosPossiveis, [1, 3]) &&
-    hasCommonPracticeFor(selectedCnae.observacao, "comercio");
-  const isComercioIndustriaServicoAmbiguo =
-    selectedCnae?.permitido &&
-    hasSameAnexos(selectedCnae.anexosPossiveis, [1, 2, 3]) &&
-    hasCommonPracticeFor(selectedCnae.observacao, "industria");
-  const isIndustriaServicoAmbiguo =
-    selectedCnae?.permitido &&
-    hasSameAnexos(selectedCnae.anexosPossiveis, [2, 3]) &&
-    normalizeSearch(selectedCnae.observacao).includes(
-      "pratica mais comum ii",
-    ) &&
-    normalizeSearch(selectedCnae.observacao).includes(
-      "se nao conceito industrial iii",
-    );
-  const isIndustriaServicoCommonAmbiguo =
-    selectedCnae?.permitido &&
-    hasSameAnexos(selectedCnae.anexosPossiveis, [2, 3]) &&
-    hasCommonPracticeFor(selectedCnae.observacao, "industria");
-  const isServicoObraAmbiguo =
-    selectedCnae?.permitido &&
-    hasSameAnexos(selectedCnae.anexosPossiveis, [3, 4]) &&
-    normalizeSearch(selectedCnae.observacao).includes(
-      "pratica mais comum iii",
-    ) &&
-    normalizeSearch(selectedCnae.observacao).includes("construcao obra iv");
-  const isSuggestedAnexoUmOuDois =
-    selectedCnae?.permitido &&
-    selectedCnae.anexosPossiveis.length > 1 &&
-    (selectedCnae.anexoPadrao === 1 || selectedCnae.anexoPadrao === 2);
-
   function handleConfirmRbt() {
     setDasError("");
     setRbtError("");
@@ -693,6 +1597,7 @@ export default function SimulatorModePicker() {
         }),
       );
       setShowFinalResult(false);
+      setShowSnTaxAnalysis(false);
       setDarfResult(null);
       setProLaboreError("");
       setCalculationPulse(false);
@@ -709,6 +1614,44 @@ export default function SimulatorModePicker() {
     }
   }
 
+  function handleConfirmLucroPresumido() {
+    setLpError("");
+    setLpResult(null);
+    setDarfResult(null);
+    setProLaboreError("");
+
+    const valorNfse = parseCurrency(lpValorNfse);
+    const faturamentoValue = parseCurrency(lpFaturamentoMensal);
+    const aliquotaIss = Number(lpAliquotaIss.replace(",", "."));
+
+    if (!lpExportacaoServico) {
+      setLpError("Informe se a operacao e exportacao para o exterior.");
+      return;
+    }
+
+    try {
+      setLpResult(
+        calcularLucroPresumido({
+          valorNfse,
+          faturamentoMensal: faturamentoValue,
+          exportacaoServico: lpExportacaoServico === "sim",
+          aliquotaIssPercent: lpExportacaoServico === "sim" ? 0 : aliquotaIss,
+        }),
+      );
+      setCalculationPulse(false);
+      window.requestAnimationFrame(() => {
+        setCalculationPulse(true);
+        window.setTimeout(() => setCalculationPulse(false), 260);
+      });
+    } catch (error) {
+      setLpError(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel calcular o Lucro Presumido.",
+      );
+    }
+  }
+
   return (
     <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-8">
       <p className="text-[11px] uppercase tracking-[0.28em] text-orange-200">
@@ -718,8 +1661,8 @@ export default function SimulatorModePicker() {
         Qual regime voce quer simular?
       </h2>
       <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-        Esta sera a primeira pergunta do questionario. A resposta define quais
-        campos aparecem nas proximas etapas e qual regra de calculo sera usada.
+        A simulacao comeca pela escolha do regime. A partir dessa resposta, a
+        ferramenta libera apenas os campos que fazem sentido para o calculo.
       </p>
 
       <div className="mt-7 grid gap-4 lg:grid-cols-2">
@@ -731,7 +1674,15 @@ export default function SimulatorModePicker() {
             <button
               key={option.id}
               type="button"
-              onClick={() => setSelectedRegime(option.id)}
+              onClick={() => {
+                setSelectedRegime(option.id);
+                setDasResult(null);
+                setLpResult(null);
+                setDarfResult(null);
+                setDasError("");
+                setLpError("");
+                setProLaboreError("");
+              }}
               className={`min-h-32 rounded-3xl border p-5 text-left transition-all duration-300 ${
                 isActive
                   ? "border-cyan-300/35 bg-cyan-300/10 text-white shadow-[0_16px_40px_rgba(34,211,238,0.12)]"
@@ -917,12 +1868,7 @@ export default function SimulatorModePicker() {
                       ) : (
                         <div className="mt-4">
                           <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
-                            {isComercioServicoAmbiguo ||
-                            isComercioIndustriaServicoAmbiguo
-                            || isIndustriaServicoAmbiguo
-                            || isIndustriaServicoCommonAmbiguo
-                            || isServicoObraAmbiguo
-                            || isSuggestedAnexoUmOuDois
+                            {selectedCnae.anexosPossiveis.length > 1
                               ? "Escolha como levar para o calculo"
                               : "Anexo aplicado no calculo"}
                           </p>
@@ -1010,14 +1956,15 @@ export default function SimulatorModePicker() {
                             </span>
                             <span
                               className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                                item.permitido &&
-                                item.anexosPossiveis.length === 1
+                                item.permitido
                                   ? "border border-cyan-300/15 bg-cyan-300/8 text-cyan-100"
                                   : "border border-orange-300/20 bg-orange-400/10 text-orange-100"
                               }`}
                             >
                               {!item.permitido
                                 ? "vedada"
+                                : item.anexosPossiveis.length > 1
+                                  ? "escolher anexo"
                                   : "permitida"}
                             </span>
                           </div>
@@ -1386,20 +2333,22 @@ export default function SimulatorModePicker() {
                             Resumo do faturamento, impostos e liquido estimado.
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowFinalResult((current) => !current)
-                          }
-                          className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
-                        >
-                          {showFinalResult ? "Ocultar" : "Ver resultado"}
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform duration-300 ${
-                              showFinalResult ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowFinalResult((current) => !current)
+                            }
+                            className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/8 px-4 py-2 text-sm font-semibold text-cyan-100 transition-colors duration-300 hover:border-cyan-300/30"
+                          >
+                            {showFinalResult ? "Ocultar" : "Ver resultado"}
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform duration-300 ${
+                                showFinalResult ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        </div>
                       </div>
 
                       {showFinalResult ? (
@@ -1407,6 +2356,7 @@ export default function SimulatorModePicker() {
                           <ResultadoFinalCard
                             darfResult={darfResult}
                             dasResult={dasResult}
+                            exportacaoServico={exportacaoServico === "sim"}
                             faturamentoMensal={faturamentoMensal}
                             onCalcularDarf={handleCalcularDarf}
                             proLabore={proLabore}
@@ -1421,19 +2371,230 @@ export default function SimulatorModePicker() {
                       ) : null}
                     </div>
 
-                    <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
-                        Analise tributaria
-                      </p>
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-                        Espaco reservado para interpretar o resultado, comparar
-                        caminhos e orientar os proximos ajustes do cenario.
-                      </p>
-                    </div>
                   </div>
                 ) : null}
               </div>
             ) : null}
+
+            {dasResult && showFinalResult ? (
+              <div className="mt-5">
+                <AnaliseTributariaSimplesCard
+                  darfResult={darfResult}
+                  dasResult={dasResult}
+                  exportacaoServico={exportacaoServico === "sim"}
+                  faturamentoMensal={faturamentoMensal}
+                  setShowTaxAnalysis={setShowSnTaxAnalysis}
+                  showTaxAnalysis={showSnTaxAnalysis}
+                />
+              </div>
+            ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {selectedRegime === "lucro-presumido" ? (
+        <div
+          className={`mt-6 rounded-3xl border border-white/8 bg-slate-950/55 p-5 transition-all duration-300 md:p-6 ${
+            calculationPulse
+              ? "border-cyan-300/35 shadow-[0_0_34px_rgba(34,211,238,0.14)]"
+              : ""
+          }`}
+        >
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-200">
+                Lucro Presumido
+              </p>
+              <h3 className="mt-4 text-2xl font-semibold text-white">
+                Simule os impostos proporcionais da NFS-e.
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                Neste caminho sao considerados PIS, COFINS, ISS, CSLL, IRPJ e o
+                adicional de IRPJ. Para IRPJ e CSLL, o faturamento mensal e
+                usado como media do trimestre e a receita trimestral e estimada
+                multiplicando esse valor por 3.
+              </p>
+
+              <div className="mt-5 grid gap-3">
+                {[
+                  "Receita trimestral estimada pelo faturamento mensal x 3",
+                  "Base presumida de 32% sobre a receita trimestral",
+                  "IRPJ e CSLL proporcionais ao peso da nota no trimestre",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-200"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/8 bg-slate-950/70 p-5">
+              <p className="text-[11px] uppercase tracking-[0.26em] text-orange-200">
+                Entrada de dados LP
+              </p>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                    Valor da NFS-e
+                  </span>
+                  <input
+                    inputMode="numeric"
+                    type="text"
+                    value={lpValorNfse}
+                    onChange={(event) => {
+                      setLpValorNfse(
+                        formatCurrencyFromDigits(event.target.value),
+                      );
+                      setLpResult(null);
+                      setLpError("");
+                    }}
+                    placeholder="R$ 0,00"
+                    className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                    Faturamento mensal
+                  </span>
+                  <input
+                    inputMode="numeric"
+                    type="text"
+                    value={lpFaturamentoMensal}
+                    onChange={(event) => {
+                      setLpFaturamentoMensal(
+                        formatCurrencyFromDigits(event.target.value),
+                      );
+                      setLpResult(null);
+                      setLpError("");
+                    }}
+                    placeholder="R$ 0,00"
+                    className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45"
+                  />
+                  <span className="mt-2 block text-xs leading-5 text-slate-400">
+                    Esse valor sera usado como media mensal para estimar o
+                    trimestre multiplicando por 3 para IRPJ e CSLL.
+                  </span>
+                </label>
+              </div>
+
+              <div className="mt-4 grid items-end gap-4 md:grid-cols-[1fr_0.75fr_auto]">
+                <div>
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                    E exportacao para o exterior?
+                  </span>
+                  <div className="mt-3 grid h-12 grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/80 p-1">
+                    {[
+                      { value: "sim", label: "Sim" },
+                      { value: "nao", label: "Nao" },
+                    ].map((option) => {
+                      const isActive = lpExportacaoServico === option.value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setLpExportacaoServico(option.value);
+                            setLpResult(null);
+                            setLpError("");
+                            if (option.value === "sim") {
+                              setLpAliquotaIss("");
+                            }
+                          }}
+                          className={`rounded-xl text-sm font-semibold transition-all duration-300 ${
+                            isActive
+                              ? "bg-cyan-300/15 text-white shadow-[0_0_18px_rgba(34,211,238,0.12)]"
+                              : "text-slate-500 hover:text-slate-200"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                    ISS municipal
+                  </span>
+                  <input
+                    inputMode="decimal"
+                    type="text"
+                    value={lpAliquotaIss}
+                    disabled={lpExportacaoServico === "sim"}
+                    onChange={(event) => {
+                      setLpAliquotaIss(
+                        event.target.value.replace(/[^\d,.]/g, ""),
+                      );
+                      setLpResult(null);
+                      setLpError("");
+                    }}
+                    placeholder={
+                      lpExportacaoServico === "sim" ? "Isento" : "2,00 a 5,00"
+                    }
+                    className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-white outline-none transition-colors duration-300 placeholder:text-slate-500 focus:border-cyan-300/45 disabled:cursor-not-allowed disabled:opacity-45"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmLucroPresumido}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 md:min-w-48"
+                >
+                  Confirmar
+                  <CheckCircle2 className="h-4 w-4" />
+                </button>
+              </div>
+
+              {lpExportacaoServico === "sim" ? (
+                <p className="mt-4 rounded-2xl border border-cyan-300/12 bg-cyan-300/6 p-3 text-sm leading-6 text-slate-200">
+                  Na exportacao de servicos, este simulador considera PIS,
+                  COFINS e ISS como isentos, mantendo IRPJ e CSLL proporcionais
+                  a nota.
+                </p>
+              ) : null}
+
+              {lpError ? (
+                <p className="mt-4 rounded-2xl border border-orange-300/20 bg-orange-400/10 p-4 text-sm leading-7 text-orange-100">
+                  {lpError}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          {lpResult ? (
+            <div className="mt-5 grid gap-4">
+              <ResultadoLucroPresumidoCard resultado={lpResult} />
+
+              <ResultadoFinalLucroPresumidoCard
+                darfResult={darfResult}
+                lpResult={lpResult}
+                onCalcularDarf={handleCalcularDarf}
+                proLabore={proLabore}
+                proLaboreError={proLaboreError}
+                setProLabore={(value) => {
+                  setProLabore(value);
+                  setDarfResult(null);
+                  setProLaboreError("");
+                }}
+              />
+
+              <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-orange-200">
+                  Analise tributaria
+                </p>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                  Em desenvolvimento. Este caminho ainda precisa de informacoes
+                  complementares para uma leitura tributaria mais precisa.
+                </p>
+              </div>
             </div>
           ) : null}
         </div>

@@ -159,6 +159,121 @@ body::after {
   color: rgba(253, 186, 116, 0.2);
 }
 
+.agio-ambient {
+  opacity: 0.88;
+}
+
+.agio-ambient__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(103, 232, 249, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(249, 115, 22, 0.038) 1px, transparent 1px);
+  background-position: center;
+  background-size: 96px 96px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 14%,
+    black 74%,
+    transparent 100%
+  );
+  animation: agio-grid-drift 24s linear infinite;
+}
+
+.agio-ambient__beam {
+  position: absolute;
+  left: -18%;
+  right: -18%;
+  height: 34%;
+  opacity: 0.36;
+  transform: rotate(-8deg);
+  filter: blur(18px);
+  mix-blend-mode: screen;
+}
+
+.agio-ambient__beam--one {
+  top: 10%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(103, 232, 249, 0.06) 24%,
+    rgba(103, 232, 249, 0.16) 50%,
+    rgba(249, 115, 22, 0.09) 72%,
+    transparent 100%
+  );
+  animation: agio-beam-one 18s ease-in-out infinite alternate;
+}
+
+.agio-ambient__beam--two {
+  bottom: 5%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(249, 115, 22, 0.08) 18%,
+    rgba(103, 232, 249, 0.12) 52%,
+    rgba(14, 165, 233, 0.08) 78%,
+    transparent 100%
+  );
+  animation: agio-beam-two 22s ease-in-out infinite alternate;
+}
+
+.agio-ambient__ledger {
+  position: absolute;
+  inset: 0;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 18%,
+    black 82%,
+    transparent 100%
+  );
+}
+
+.agio-ambient__mark {
+  --agio-mark-index: 0;
+  --agio-mark-left: 8%;
+  --agio-mark-top: 12%;
+  position: absolute;
+  left: var(--agio-mark-left);
+  top: var(--agio-mark-top);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.24);
+  padding: 0.45rem 0.75rem;
+  color: rgba(226, 232, 240, 0.16);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  transform: translate3d(0, 0, 0);
+  animation: agio-mark-float 12s ease-in-out infinite;
+  animation-delay: calc(var(--agio-mark-index) * -1.35s);
+}
+
+.agio-ambient--hub .agio-ambient__grid {
+  background-size: 112px 112px;
+}
+
+.agio-ambient--hub .agio-ambient__mark {
+  color: rgba(165, 243, 252, 0.16);
+}
+
+.agio-ambient--simulator .agio-ambient__grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(103, 232, 249, 0.048) 1px, transparent 1px);
+  background-size: 84px 84px;
+}
+
+.agio-ambient--simulator .agio-ambient__mark {
+  color: rgba(253, 186, 116, 0.15);
+}
+
 @keyframes float {
   0%,
   100% {
@@ -190,6 +305,47 @@ body::after {
   }
 }
 
+@keyframes agio-grid-drift {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 96px 96px;
+  }
+}
+
+@keyframes agio-beam-one {
+  0% {
+    transform: translate3d(-3%, -4%, 0) rotate(-8deg);
+  }
+
+  100% {
+    transform: translate3d(4%, 6%, 0) rotate(-6deg);
+  }
+}
+
+@keyframes agio-beam-two {
+  0% {
+    transform: translate3d(3%, 7%, 0) rotate(-10deg);
+  }
+
+  100% {
+    transform: translate3d(-4%, -5%, 0) rotate(-8deg);
+  }
+}
+
+@keyframes agio-mark-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(10px, -14px, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -199,7 +355,10 @@ body::after {
   .hero-orb-left,
   .hero-orb-right,
   .floating-chip,
-  .symbol-rain__item {
+  .symbol-rain__item,
+  .agio-ambient__grid,
+  .agio-ambient__beam,
+  .agio-ambient__mark {
     animation: none;
   }
 }

@@ -21,21 +21,21 @@ export const toolCatalog: ToolCatalogItem[] = [
     slug: "simulador-impostos",
     title: "Simulador de Impostos SN e LP",
     summary:
-      "Primeira ferramenta ativa do hub, feita para reunir cenários do Simples Nacional e do Lucro Presumido em um fluxo web.",
+      "Primeira ferramenta ativa da Linha agio, criada para transformar simulacoes fiscais em um fluxo mais visual e organizado.",
     status: "disponivel",
     href: "/produtos/ferramentas-agies/simulador-impostos-sn-lp",
     tags: ["Simples Nacional", "Lucro Presumido", "TypeScript"],
-    note: "Base atual em migração da lógica Python para o site.",
+    note: "Estou levando a logica fiscal antiga para uma experiencia web mais clara.",
   },
   {
     slug: "valor-bruto",
     title: "Valor bruto",
     summary:
-      "Espaço já reservado para a próxima ferramenta. Ela entra depois, sem quebrar a estrutura do hub.",
+      "Uma futura ferramenta para apoiar calculos financeiros do dia a dia, mantendo a mesma linguagem da Linha agio.",
     status: "em-breve",
     href: "/produtos/ferramentas-agies/valor-bruto",
     tags: ["Em breve", "Financeiro", "Cálculo"],
-    note: "Card preparado, mas ainda sem fluxo ativo.",
+    note: "Ideia mapeada para entrar como proxima entrega.",
   },
 ];
 
@@ -44,36 +44,36 @@ export const simulationModes: SimulationMode[] = [
     id: "cnae",
     title: "CNAE",
     summary:
-      "Ideal para começar pela atividade da empresa e depois cruzar com o enquadramento mais adequado.",
+      "Uso este caminho quando o usuario conhece a atividade, mas precisa chegar ao anexo correto com mais seguranca.",
     nextInputs: [
       "CNAE principal ou atividade",
       "Faturamento mensal ou RBT12",
       "Contexto para sugerir enquadramento",
     ],
-    source: "Estrutura preparada para expansão do simulador.",
+    source: "Base propria da Linha agio para consulta por atividade.",
   },
   {
     id: "simples-anexo",
     title: "Anexo do Simples",
     summary:
-      "Segue a linha do cálculo do DAS, com foco em anexo, faturamento e cenário de exportação ou regra complementar.",
+      "Este caminho atende quem ja sabe o anexo e quer ir direto para RBT12, faturamento, exportacao e DAS.",
     nextInputs: [
       "Anexo do Simples",
       "RBT12",
       "Faturamento do mês",
     ],
-    source: "Base atual: calculo_das.py",
+    source: "Logica migrada e refinada a partir do calculo antigo.",
   },
   {
     id: "lp",
     title: "LP",
     summary:
-      "Pensado para a simulação proporcional da NFS-e no Lucro Presumido, incluindo PIS, COFINS, ISS, CSLL e IRPJ.",
+      "Uso este caminho para simular Lucro Presumido com PIS, COFINS, ISS, CSLL, IRPJ e adicional proporcional a NFS-e.",
     nextInputs: [
       "Faturamento mensal",
       "Valor da NFS-e",
       "Natureza da operação / ISS",
     ],
-    source: "Base atual: simulador_lp.py",
+    source: "Logica migrada a partir do simulador antigo de LP.",
   },
 ];

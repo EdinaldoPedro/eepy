@@ -29,6 +29,31 @@ export type DarfProLaboreResultado = {
   totalDarf: number;
 };
 
+export type LucroPresumidoInput = {
+  valorNfse: number;
+  faturamentoMensal: number;
+  exportacaoServico: boolean;
+  aliquotaIssPercent: number;
+};
+
+export type LucroPresumidoResultado = {
+  valorNfse: number;
+  faturamentoMensal: number;
+  receitaTrimestralEstimada: number;
+  exportacaoServico: boolean;
+  aliquotaIssPercent: number;
+  basePresumidaTrimestral: number;
+  irpjTrimestral: number;
+  csllTrimestral: number;
+  irpjAdicionalTrimestral: number;
+  proporcaoNfse: number;
+  totalTributos: number;
+  aliquotaEfetivaPercent: number;
+  liquidoNota: number;
+  rateio: Record<string, number>;
+  percentuais: Record<string, number>;
+};
+
 type AnexoConfig = {
   nome: string;
   aliquotas: number[];
@@ -261,5 +286,86 @@ export function calcularDarfProLabore(
     baseIrpf: round(baseIrpf),
     irpf,
     totalDarf: round(inss + irpf),
+  };
+}
+
+export function calcularLucroPresumido({
+  valorNfse,
+  faturamentoMensal,
+  exportacaoServico,
+  aliquotaIssPercent,
+}: LucroPresumidoInput): LucroPresumidoResultado {
+  if (!Number.isFinite(valorNfse) || valorNfse <= 0) {
+    throw new Error("Informe o valor da NFS-e maior que zero.");
+  }
+
+  if (!Number.isFinite(faturamentoMensal) || faturamentoMensal <= 0) {
+    throw new Error("Informe o faturamento mensal maior que zero.");
+  }
+
+  if (valorNfse > faturamentoMensal) {
+    throw new Error("O valor da NFS-e nao pode ser maior que o faturamento mensal.");
+  }
+
+  if (
+    !exportacaoServico &&
+    (!Number.isFinite(aliquotaIssPercent) ||
+      aliquotaIssPercent < 2 ||
+      aliquotaIssPercent > 5)
+  ) {
+    throw new Error("Informe uma aliquota de ISS entre 2% e 5%.");
+  }
+
+  const pis = exportacaoServico ? 0 : valorNfse * 0.0065;
+  const cofins = exportacaoServico ? 0 : valorNfse * 0.03;
+  const iss = exportacaoServico ? 0 : valorNfse * (aliquotaIssPercent / 100);
+  const receitaTrimestralEstimada = faturamentoMensal * 3;
+  const basePresumidaTrimestral = receitaTrimestralEstimada * 0.32;
+  const csllTrimestral = basePresumidaTrimestral * 0.09;
+  const irpjTrimestral = basePresumidaTrimestral * 0.15;
+  const irpjAdicionalTrimestral =
+    basePresumidaTrimestral > 60000
+      ? (basePresumidaTrimestral - 60000) * 0.1
+      : 0;
+  const proporcaoNfse = valorNfse / receitaTrimestralEstimada;
+  const csll = csllTrimestral * proporcaoNfse;
+  const irpj = irpjTrimestral * proporcaoNfse;
+  const irpjAdicional = irpjAdicionalTrimestral * proporcaoNfse;
+  const rateio = {
+    PIS: round(pis),
+    COFINS: round(cofins),
+    ISS: round(iss),
+    CSLL: round(csll),
+    IRPJ: round(irpj),
+    "IRPJ adicional": round(irpjAdicional),
+  };
+  const totalTributos = round(
+    Object.values(rateio).reduce((sum, valor) => sum + valor, 0),
+  );
+  const aliquotaEfetivaPercent =
+    valorNfse > 0 ? round((totalTributos / valorNfse) * 100, 8) : 0;
+  const percentuais = Object.fromEntries(
+    Object.entries(rateio).map(([tributo, valor]) => [
+      tributo,
+      valorNfse > 0 ? round((valor / valorNfse) * 100, 8) : 0,
+    ]),
+  );
+
+  return {
+    valorNfse: round(valorNfse),
+    faturamentoMensal: round(faturamentoMensal),
+    receitaTrimestralEstimada: round(receitaTrimestralEstimada),
+    exportacaoServico,
+    aliquotaIssPercent: exportacaoServico ? 0 : round(aliquotaIssPercent, 4),
+    basePresumidaTrimestral: round(basePresumidaTrimestral),
+    irpjTrimestral: round(irpjTrimestral),
+    csllTrimestral: round(csllTrimestral),
+    irpjAdicionalTrimestral: round(irpjAdicionalTrimestral),
+    proporcaoNfse: round(proporcaoNfse * 100, 8),
+    totalTributos,
+    aliquotaEfetivaPercent,
+    liquidoNota: round(valorNfse - totalTributos),
+    rateio,
+    percentuais,
   };
 }
