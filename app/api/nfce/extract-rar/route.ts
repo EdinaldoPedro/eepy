@@ -1,6 +1,6 @@
-import { execFile } from "node:child_process";
+﻿import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -10,8 +10,14 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 const execFileAsync = promisify(execFile);
-const unrarPath = "C:\\Program Files\\WinRAR\\UnRAR.exe";
 const maxFolderDepth = 5;
+
+const windowsUnrarCandidates = [
+  "C:\\Program Files\\WinRAR\\UnRAR.exe",
+  "C:\\Program Files (x86)\\WinRAR\\UnRAR.exe",
+  "C:\\Program Files\\WinRAR\\WinRAR.exe",
+  "C:\\Program Files (x86)\\WinRAR\\WinRAR.exe",
+];
 
 type ExtractedXml = {
   name: string;
@@ -21,6 +27,38 @@ type ExtractedXml = {
 
 function folderDepth(relativePath: string) {
   return Math.max(relativePath.split(/[\\/]/).length - 1, 0);
+}
+
+async function fileExists(filePath: string) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveUnrarCommand() {
+  const configuredPath = process.env.NFCE_UNRAR_PATH || process.env.UNRAR_PATH;
+  if (configuredPath) return configuredPath;
+
+  if (process.platform === "win32") {
+    for (const candidate of windowsUnrarCandidates) {
+      if (await fileExists(candidate)) return candidate;
+    }
+  }
+
+  return "unrar";
+}
+
+function rarErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+    return process.platform === "win32"
+      ? "UnRAR nao encontrado no servidor. Instale o WinRAR ou configure NFCE_UNRAR_PATH com o caminho do UnRAR.exe."
+      : "UnRAR nao encontrado no servidor. Instale com: sudo apt install unrar";
+  }
+
+  return error instanceof Error ? error.message : "Falha ao extrair RAR.";
 }
 
 async function collectXmlFiles(directory: string, root = directory): Promise<ExtractedXml[]> {
@@ -68,14 +106,15 @@ export async function POST(request: Request) {
   try {
     await mkdir(extractPath, { recursive: true });
     await writeFile(archivePath, Buffer.from(await archive.arrayBuffer()));
-    await execFileAsync(unrarPath, ["x", "-idq", "-y", archivePath, extractPath]);
+
+    const unrarCommand = await resolveUnrarCommand();
+    await execFileAsync(unrarCommand, ["x", "-idq", "-y", archivePath, extractPath]);
 
     const files = await collectXmlFiles(extractPath);
 
     return NextResponse.json({ files });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Falha ao extrair RAR.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: rarErrorMessage(error) }, { status: 500 });
   } finally {
     await rm(workdir, { recursive: true, force: true });
   }
