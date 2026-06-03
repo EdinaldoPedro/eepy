@@ -31,6 +31,16 @@ const tools = [
     description:
       "Ferramenta agio para transformar calculos fiscais em um fluxo mais claro, visual e facil de revisar.",
     href: "/produtos/ferramentas-agies/simulador-impostos-sn-lp",
+    actionLabel: "Abrir simulador",
+  },
+  {
+    icon: FileSpreadsheet,
+    status: "Utilitario fiscal",
+    title: "Conversor NFC-e para Excel e PDF",
+    description:
+      "Importe XMLs de NFC-e, pastas ou ZIPs para gerar analiticos em Excel e relatorios resumidos em PDF.",
+    href: "/produtos/ferramentas-agies/conversor-nfce",
+    actionLabel: "Abrir conversor",
   },
 ];
 
@@ -146,7 +156,7 @@ export default function FerramentasAgiesPage() {
                 href={tool.href}
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 md:w-auto md:min-w-64"
               >
-                Abrir simulador
+                {tool.actionLabel}
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </article>
