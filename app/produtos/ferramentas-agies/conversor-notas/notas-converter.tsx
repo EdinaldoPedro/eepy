@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 
 type NoteStatus = "autorizada" | "cancelada" | "invalida" | "sem-protocolo";
+type DocumentKind = "nfce" | "nfe-entrada" | "nfe-saida" | "nfe" | "nfse-abrasf" | "nfse-nacional" | "evento" | "desconhecido";
 type OutputMode = "excel" | "pdf";
 type ExcelModel = "produtos" | "notas";
+type SelectedDocumentType = "nfce" | "nfe" | "nfse";
+type OperationDirection = "entrada" | "saida" | "nao-classificada";
 
 type RawField = {
   key: string;
@@ -31,6 +34,10 @@ type ProductRow = {
   emitente: string;
   cnpj: string;
   status: NoteStatus;
+  documentKind: DocumentKind;
+  operationDirection: OperationDirection;
+  counterpartyName: string;
+  counterpartyCnpj: string;
   itemNumero: string;
   codigo: string;
   ean: string;
@@ -60,6 +67,10 @@ type NoteRow = {
   fantasia: string;
   cnpj: string;
   status: NoteStatus;
+  documentKind: DocumentKind;
+  operationDirection: OperationDirection;
+  counterpartyName: string;
+  counterpartyCnpj: string;
   motivo: string;
   protocolo: string;
   itens: number;
@@ -106,6 +117,23 @@ const statusLabels: Record<NoteStatus, string> = {
   "sem-protocolo": "Sem protocolo",
 };
 
+
+const selectedDocumentTypeLabels: Record<SelectedDocumentType, string> = {
+  nfce: "NFC-e",
+  nfe: "NF-e",
+  nfse: "NFS-e",
+};
+
+const documentKindLabels: Record<DocumentKind, string> = {
+  nfce: "NFC-e",
+  "nfe-entrada": "NF-e Entrada",
+  "nfe-saida": "NF-e Saida",
+  nfe: "NF-e",
+  "nfse-abrasf": "NFS-e ABRASF",
+  "nfse-nacional": "NFS-e Nacional",
+  evento: "Evento",
+  desconhecido: "Desconhecido",
+};
 const initialOptions: OutputOptions = {
   mode: "excel",
   excelModel: "produtos",
@@ -213,7 +241,194 @@ function noteStatus(cStat: string, reason: string, hasNfe: boolean): NoteStatus 
   return "invalida";
 }
 
-function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
+
+function firstAvailableText(root: Element | Document | undefined, names: string[]) {
+  if (!root) return "";
+  for (const name of names) {
+    const value = firstText(root, name);
+    if (value) return value;
+  }
+  return "";
+}
+
+function serviceStatus(root: Element | Document): NoteStatus {
+  const cancelText = ["CancelamentoNfse", "PedidoCancelamento", "InfPedidoCancelamento", "Cancelamento", "infPedReg", "pedRegEvento"].some((name) => localElements(root, name).length > 0);
+  const statusText = firstAvailableText(root, ["Status", "cStat", "situacao", "Situacao"]);
+  const reason = firstAvailableText(root, ["xMotivo", "Motivo", "DescricaoEvento", "descEvento"]).toLowerCase();
+
+  if (cancelText || ["2", "101", "135", "151", "155"].includes(statusText) || reason.includes("cancel")) return "cancelada";
+  if (["100", "150"].includes(statusText)) return "autorizada";
+  return "autorizada";
+}
+
+function classifyNfeDocument(modelo: string, tipoOperacao: string): DocumentKind {
+  if (modelo === "65") return "nfce";
+  if (modelo === "55" && tipoOperacao === "0") return "nfe-entrada";
+  if (modelo === "55" && tipoOperacao === "1") return "nfe-saida";
+  if (modelo === "55") return "nfe";
+  return "desconhecido";
+}
+
+function firstElement(root: Element | Document | undefined, names: string[]) {
+  if (!root) return undefined;
+  for (const name of names) {
+    const found = node(root, name);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function idText(root: Element | undefined) {
+  const idRoot = firstElement(root, ["CpfCnpj", "CPFCNPJ", "cpfCnpj"]) ?? root;
+  return firstAvailableText(idRoot, ["Cnpj", "CNPJ", "Cpf", "CPF", "cNPJ", "cCpf"]);
+}
+
+function serviceValue(values: Element | undefined, names: string[]) {
+  return numberValue(firstAvailableText(values, names));
+}
+
+function parseServiceRoot(root: Element, sourceName: string, documentKind: DocumentKind, index: number): { note: NoteRow; product?: ProductRow } | null {
+  const info = firstElement(root, ["InfNfse", "infNFSe", "infDPS", "Nfse", "NFSe"]) ?? root;
+  const service = firstElement(root, ["Servico", "serv", "Serv", "servico"]) ?? info;
+  const values = firstElement(service, ["Valores", "valores", "vServPrest", "ValoresNfse"]) ?? firstElement(root, ["Valores", "valores", "vServPrest", "ValoresNfse"]) ?? service;
+  const emit = firstElement(root, ["emit"]);
+  const provider = firstElement(root, ["PrestadorServico", "Prestador", "IdentificacaoPrestador", "prest"]) ?? emit;
+  const providerIdRoot = firstElement(provider, ["IdentificacaoPrestador", "CpfCnpj", "CPFCNPJ", "prest"]) ?? provider;
+  const providerIdentity = emit ?? provider;
+  const providerAddress = firstElement(providerIdentity, ["Endereco", "ender", "enderNac", "end", "endereco"]) ?? firstElement(provider, ["Endereco", "ender", "enderNac", "end", "endereco"]) ?? providerIdentity;
+  const taker = firstElement(root, ["TomadorServico", "Tomador", "IdentificacaoTomador", "toma", "dest"]);
+  const takerIdRoot = firstElement(taker, ["IdentificacaoTomador", "CpfCnpj", "CPFCNPJ", "toma", "dest"]) ?? taker;
+
+  const numero = firstAvailableText(info, ["Numero", "nNFSe", "nNFS-e", "nDPS", "NumeroNfse", "nNFSeSubst"]);
+  const codigoVerificacao = firstAvailableText(info, ["CodigoVerificacao", "cVerif", "codVerificacao", "cLocIncid"]);
+  const valorServico = serviceValue(values, ["ValorServicos", "ValorServico", "vServ", "vLiq", "ValorLiquidoNfse", "vBC", "vServPrest"]);
+  const descontoCondicionado = serviceValue(values, ["DescontoCondicionado", "ValorDescontoCondicionado", "vDescCond", "ValorDesconto", "vDesc"]);
+  const descontoIncondicionado = serviceValue(values, ["DescontoIncondicionado", "ValorDescontoIncondicionado", "vDescIncond"]);
+  const deducoes = serviceValue(values, ["ValorDeducoes", "vDed", "vDedRedBC"]);
+  const descontos = descontoCondicionado + descontoIncondicionado + deducoes;
+  const valorLiquido = serviceValue(values, ["ValorLiquidoNfse", "vLiq", "vLiqNfse"]);
+  const emitente = firstAvailableText(providerIdentity, ["RazaoSocial", "xNome", "Nome", "NomeFantasia", "xFant"]) || firstAvailableText(info, ["xNome", "Nome"]);
+  const fantasia = firstAvailableText(providerIdentity, ["NomeFantasia", "xFant"]);
+  const cnpj = idText(providerIdRoot) || idText(emit);
+  const takerName = firstAvailableText(taker, ["RazaoSocial", "xNome", "Nome", "NomeFantasia", "xFant"]);
+  const takerCnpj = idText(takerIdRoot);
+  const municipio = firstAvailableText(providerAddress, ["Municipio", "xMun", "CodigoMunicipio", "cMun", "cLocEmi", "cLocPrestacao"]);
+  const uf = firstAvailableText(providerAddress, ["Uf", "UF", "uf"]);
+  const descricao = firstAvailableText(service, ["Discriminacao", "xDescServ", "Descricao", "descServ", "xDesc", "DescricaoServico"]);
+  const cnaeServico = firstAvailableText(service, ["CNAE", "Cnae", "cCNAE", "cnae", "cCnae"]);
+  const itemServico = firstAvailableText(service, ["ItemListaServico", "itemListaServico", "cItemListaServico"]);
+  const codigoServico = firstAvailableText(service, ["cTribNac", "cTribMun", "CodigoTributacaoMunicipio", "CodigoServico", "CodigoServicoNacional"]);
+  const tipoServico = firstAvailableText(info, ["xTribNac", "xTribMun"]) || descricao;
+  const servicoReferencia = [
+    cnaeServico ? `CNAE ${cnaeServico}` : "",
+    itemServico ? `Item ${itemServico}` : "",
+    codigoServico ? `Cod. servico ${codigoServico}` : "",
+    tipoServico,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+  const emissao = firstAvailableText(info, ["DataEmissao", "dhEmi", "dEmi", "DataEmissaoNfse", "dhProc", "dhEmiDPS"]);
+  const chave = firstAvailableText(info, ["ChaveAcesso", "chNFSe", "chNFe", "Id", "chDPS"]);
+  const status = serviceStatus(root);
+  const rawFields = [
+    ...collectLeafFields(root, "nfse"),
+    { key: "nfse.servico.cnae", value: cnaeServico },
+    { key: "nfse.servico.item", value: itemServico },
+    { key: "nfse.servico.codigo", value: codigoServico },
+    { key: "nfse.servico.tipo", value: tipoServico },
+  ].filter((field) => field.value);
+  const finalValue = valorLiquido || Math.max(valorServico - descontos, 0);
+
+  if (!numero && !chave && !valorServico && !descricao && !servicoReferencia && !cnpj && !takerCnpj) return null;
+
+  const note: NoteRow = {
+    chave: chave || `${sourceName}-${numero || codigoVerificacao || index}`,
+    numero,
+    serie: firstAvailableText(info, ["Serie", "serie", "SeriePrestacao"]),
+    modelo: documentKindLabels[documentKind],
+    emissao,
+    municipio,
+    uf,
+    emitente,
+    fantasia,
+    cnpj,
+    status,
+    documentKind,
+    operationDirection: "nao-classificada",
+    counterpartyName: takerName,
+    counterpartyCnpj: takerCnpj,
+    motivo: status === "cancelada" ? "NFS-e com indicativo de cancelamento" : `${documentKindLabels[documentKind]} localizada`,
+    protocolo: codigoVerificacao,
+    itens: valorServico || servicoReferencia || descricao ? 1 : 0,
+    valorProdutos: valorServico,
+    descontos,
+    valorNota: finalValue,
+    origem: sourceName,
+    rawFields,
+  };
+
+  const product: ProductRow | undefined = valorServico || servicoReferencia || descricao ? {
+    chave: note.chave,
+    numero: note.numero,
+    serie: note.serie,
+    emissao: note.emissao,
+    emitente: note.emitente,
+    cnpj: note.cnpj,
+    status: note.status,
+    documentKind,
+    operationDirection: note.operationDirection,
+    counterpartyName: note.counterpartyName,
+    counterpartyCnpj: note.counterpartyCnpj,
+    itemNumero: "1",
+    codigo: codigoServico,
+    ean: "",
+    descricao: servicoReferencia || descricao || "Servico prestado",
+    ncm: "",
+    cest: "",
+    cfop: "",
+    unidade: "SERV",
+    quantidade: 1,
+    valorUnitario: valorServico,
+    valorProduto: valorServico,
+    desconto: descontos,
+    totalLiquido: finalValue,
+    origem: sourceName,
+    rawFields: [
+      ...rawFields,
+      ...(taker ? collectLeafFields(taker, "tomador") : []),
+      ...collectLeafFields(service, "servico"),
+    ],
+  } : undefined;
+
+  return { note, product };
+}
+
+function parseServiceDocument(document: Document, sourceName: string): ParsedResult | null {
+  const abrasfRoots = localElements(document, "CompNfse");
+  const hasAbrasf = abrasfRoots.length > 0 || Boolean(node(document, "InfNfse") || node(document, "ListaNfse"));
+  const nationalRoots = localElements(document, "infNFSe").length ? localElements(document, "infNFSe") : localElements(document, "infDPS");
+  const hasNational = nationalRoots.length > 0 || Boolean(node(document, "DPS") || node(document, "NFSe"));
+
+  if (!hasAbrasf && !hasNational) return null;
+
+  const documentKind: DocumentKind = hasAbrasf ? "nfse-abrasf" : "nfse-nacional";
+  const roots = hasAbrasf
+    ? (abrasfRoots.length ? abrasfRoots : [node(document, "InfNfse") ?? document.documentElement].filter(Boolean))
+    : (nationalRoots.length ? nationalRoots : [node(document, "DPS") ?? node(document, "NFSe") ?? document.documentElement].filter(Boolean));
+
+  const parsed = roots
+    .map((root, index) => parseServiceRoot(root, sourceName, documentKind, index + 1))
+    .filter((item): item is { note: NoteRow; product?: ProductRow } => Boolean(item));
+
+  if (!parsed.length) return { notes: [], products: [], invalidFiles: [sourceName], warnings: [`${sourceName}: NFS-e localizada, mas sem dados suficientes para gerar a saida.`] };
+
+  return {
+    notes: parsed.map((item) => item.note),
+    products: parsed.flatMap((item) => (item.product ? [item.product] : [])),
+    invalidFiles: [],
+    warnings: [],
+  };
+}function parseXmlDocument(xmlText: string, sourceName: string, selectedType: SelectedDocumentType): ParsedResult {
   const parser = new DOMParser();
   const document = parser.parseFromString(xmlText, "application/xml");
   const parserError = document.getElementsByTagName("parsererror")[0];
@@ -223,8 +438,12 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
   }
 
   const nfe = node(document, "NFe");
+  const serviceDocument = parseServiceDocument(document, sourceName);
   const event = node(document, "procEventoNFe") ?? node(document, "evento");
 
+  if (selectedType === "nfse") {
+    return serviceDocument ?? { notes: [], products: [], invalidFiles: [sourceName], warnings: [`${sourceName}: o arquivo nao parece ser uma NFS-e no padrao esperado.`] };
+  }
   if (!nfe && event) {
     const cStat = firstText(document, "cStat");
     const reason = firstText(document, "xMotivo") || firstText(document, "descEvento");
@@ -244,6 +463,10 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
           fantasia: "",
           cnpj: "",
           status: noteStatus(cStat, reason, false),
+          documentKind: "evento",
+          operationDirection: "nao-classificada",
+          counterpartyName: "",
+          counterpartyCnpj: "",
           motivo: reason || "Evento processado",
           protocolo: firstText(document, "nProt"),
           itens: 0,
@@ -261,9 +484,8 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
   }
 
   if (!nfe) {
-    return { notes: [], products: [], invalidFiles: [sourceName], warnings: [] };
+    return { notes: [], products: [], invalidFiles: [sourceName], warnings: [`${sourceName}: o arquivo nao parece ser ${selectedDocumentTypeLabels[selectedType]}.`] };
   }
-
   const infNfe = node(nfe, "infNFe");
   const id = infNfe?.getAttribute("Id") ?? "";
   const chave = firstText(document, "chNFe") || id.replace(/^NFe/, "");
@@ -272,6 +494,8 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
   const enderEmit = node(nfe, "enderEmit");
   const total = node(nfe, "ICMSTot");
   const dest = node(nfe, "dest");
+  const destName = dest ? childText(dest, "xNome") : "";
+  const destCnpj = dest ? childText(dest, "CNPJ") || childText(dest, "CPF") : "";
   const transp = node(nfe, "transp");
   const pag = node(nfe, "pag");
   const infAdic = node(nfe, "infAdic");
@@ -281,6 +505,18 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
   const cStat = prot ? firstText(prot, "cStat") : firstText(document, "cStat");
   const motivo = prot ? firstText(prot, "xMotivo") : firstText(document, "xMotivo");
   const status = noteStatus(cStat, motivo, true);
+  const modelo = firstText(nfe, "mod");
+  const tipoOperacao = ide ? childText(ide, "tpNF") : firstText(nfe, "tpNF");
+  const documentKind = classifyNfeDocument(modelo, tipoOperacao);
+
+  if (selectedType === "nfce" && documentKind !== "nfce") {
+    return { notes: [], products: [], invalidFiles: [sourceName], warnings: [`${sourceName}: XML ignorado porque nao e NFC-e modelo 65.`] };
+  }
+
+  if (selectedType === "nfe" && !["nfe-entrada", "nfe-saida", "nfe"].includes(documentKind)) {
+    return { notes: [], products: [], invalidFiles: [sourceName], warnings: [`${sourceName}: XML ignorado porque nao e NF-e modelo 55.`] };
+  }
+
   const details = localElements(nfe, "det");
   const valorProdutos = numberValue(total ? childText(total, "vProd") : firstText(nfe, "vProd"));
   const descontos = numberValue(total ? childText(total, "vDesc") : firstText(nfe, "vDesc"));
@@ -290,7 +526,7 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
     chave,
     numero: firstText(nfe, "nNF"),
     serie: firstText(nfe, "serie"),
-    modelo: firstText(nfe, "mod"),
+    modelo,
     emissao: firstText(nfe, "dhEmi") || firstText(nfe, "dEmi"),
     municipio: enderEmit ? childText(enderEmit, "xMun") : "",
     uf: enderEmit ? childText(enderEmit, "UF") : "",
@@ -298,6 +534,15 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
     fantasia: emit ? childText(emit, "xFant") : "",
     cnpj: emit ? childText(emit, "CNPJ") || childText(emit, "CPF") : "",
     status,
+    documentKind,
+    operationDirection:
+      documentKind === "nfe-entrada"
+        ? "entrada"
+        : documentKind === "nfe-saida" || documentKind === "nfce"
+          ? "saida"
+          : "nao-classificada",
+    counterpartyName: destName,
+    counterpartyCnpj: destCnpj,
     motivo: motivo || (prot ? "Protocolo localizado" : "XML sem protocolo de autorizacao"),
     protocolo: prot ? firstText(prot, "nProt") : "",
     itens: details.length,
@@ -336,6 +581,10 @@ function parseXmlDocument(xmlText: string, sourceName: string): ParsedResult {
       emitente: noteBase.emitente,
       cnpj: noteBase.cnpj,
       status,
+      documentKind,
+      operationDirection: noteBase.operationDirection,
+      counterpartyName: noteBase.counterpartyName,
+      counterpartyCnpj: noteBase.counterpartyCnpj,
       itemNumero: detail.getAttribute("nItem") ?? "",
       codigo: prod ? childText(prod, "cProd") : "",
       ean: prod ? childText(prod, "cEAN") : "",
@@ -415,6 +664,27 @@ function buildExcelXml(sheetName: string, headers: string[], rows: Array<Array<s
   return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="${xmlEscape(sheetName)}"><Table>${tableRows}</Table></Worksheet></Workbook>`;
 }
 
+function buildExcelWorkbookXml(sheets: Array<{ name: string; headers: string[]; rows: Array<Array<string | number>> }>) {
+  const worksheets = sheets
+    .map((sheet) => {
+      const tableRows = [sheet.headers, ...sheet.rows]
+        .map(
+          (row) =>
+            `<Row>${row
+              .map((cell) => {
+                const isNumber = typeof cell === "number";
+                return `<Cell><Data ss:Type="${isNumber ? "Number" : "String"}">${xmlEscape(cell)}</Data></Cell>`;
+              })
+              .join("")}</Row>`,
+        )
+        .join("");
+
+      return `<Worksheet ss:Name="${xmlEscape(sheet.name)}"><Table>${tableRows}</Table></Worksheet>`;
+    })
+    .join("");
+
+  return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${worksheets}</Workbook>`;
+}
 function downloadBlob(filename: string, content: BlobPart, type: string) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -452,7 +722,8 @@ const productColumns: Array<ColumnDef<ProductRow>> = [
   { header: "UF Emitente", value: (row) => rowField(row, "ide.cUF") },
   { header: "Codigo Numerico", value: (row) => rowField(row, "ide.cNF") },
   { header: "Natureza Operacao", value: (row) => rowField(row, "ide.natOp") },
-  { header: "Modelo NFe", value: (row) => rowField(row, "ide.mod") },
+  { header: "Modelo NFe", value: (row) => rowField(row, "ide.mod") || documentKindLabels[row.documentKind] },
+  { header: "Tipo Operacao", value: (row) => rowField(row, "ide.tpNF") },
   { header: "Serie", value: (row) => row.serie },
   { header: "Numero NFe", value: (row) => row.numero },
   { header: "Data/Hora Emissao", value: (row) => dateText(row.emissao) },
@@ -463,6 +734,13 @@ const productColumns: Array<ColumnDef<ProductRow>> = [
   { header: "Indica Presenca", value: (row) => rowField(row, "ide.indPres") },
   { header: "Justificativa Contingencia", value: (row) => rowField(row, "ide.xJust") },
   { header: "Status", value: (row) => statusLabels[row.status] },
+  { header: "Operacao", value: (row) => operationLabel(row.operationDirection) },
+  { header: "Servico_CNAE", value: (row) => rowField(row, "nfse.servico.cnae") },
+  { header: "Servico_Item", value: (row) => rowField(row, "nfse.servico.item") },
+  { header: "Servico_Codigo", value: (row) => rowField(row, "nfse.servico.codigo") },
+  { header: "Servico_Tipo", value: (row) => rowField(row, "nfse.servico.tipo") },
+  { header: "Destinatario_Tomador_CNPJ", value: (row) => row.counterpartyCnpj },
+  { header: "Destinatario_Tomador_Nome", value: (row) => row.counterpartyName },
   { header: "Emitente_CNPJ", value: (row) => row.cnpj },
   { header: "Emitente_Nome", value: (row) => row.emitente },
   { header: "Emitente_Nome Fantasia", value: (row) => rowField(row, "emit.xFant") },
@@ -528,11 +806,19 @@ const productColumns: Array<ColumnDef<ProductRow>> = [
 const noteColumns: Array<ColumnDef<NoteRow>> = [
   { header: "Chave de Acesso", value: (row) => row.chave },
   { header: "Modelo NFe", value: (row) => row.modelo },
+  { header: "Tipo Operacao", value: (row) => rowField(row, "ide.tpNF") },
   { header: "Serie", value: (row) => row.serie },
   { header: "Numero NFe", value: (row) => row.numero },
   { header: "Data/Hora Emissao", value: (row) => dateText(row.emissao) },
   { header: "Status", value: (row) => statusLabels[row.status] },
   { header: "Motivo", value: (row) => row.motivo },
+  { header: "Operacao", value: (row) => operationLabel(row.operationDirection) },
+  { header: "Servico_CNAE", value: (row) => rowField(row, "nfse.servico.cnae") },
+  { header: "Servico_Item", value: (row) => rowField(row, "nfse.servico.item") },
+  { header: "Servico_Codigo", value: (row) => rowField(row, "nfse.servico.codigo") },
+  { header: "Servico_Tipo", value: (row) => rowField(row, "nfse.servico.tipo") },
+  { header: "Destinatario_Tomador_CNPJ", value: (row) => row.counterpartyCnpj },
+  { header: "Destinatario_Tomador_Nome", value: (row) => row.counterpartyName },
   { header: "Protocolo", value: (row) => row.protocolo },
   { header: "Natureza Operacao", value: (row) => rowField(row, "ide.natOp") },
   { header: "Emitente_CNPJ", value: (row) => row.cnpj },
@@ -551,6 +837,216 @@ const noteColumns: Array<ColumnDef<NoteRow>> = [
   { header: "Origem Arquivo", value: (row) => row.origem },
 ];
 
+const nfseNationalTagPaths = [
+  "nfse.Id",
+  "nfse.xLocEmi",
+  "nfse.xLocPrestacao",
+  "nfse.nNFSe",
+  "nfse.cLocIncid",
+  "nfse.xLocIncid",
+  "nfse.xTribNac",
+  "nfse.xTribMun",
+  "nfse.verAplic",
+  "nfse.ambGer",
+  "nfse.tpEmis",
+  "nfse.procEmi",
+  "nfse.cStat",
+  "nfse.dhProc",
+  "nfse.nDFSe",
+  "nfse.emit.CNPJ",
+  "nfse.emit.CPF",
+  "nfse.emit.NIF",
+  "nfse.emit.IM",
+  "nfse.emit.xNome",
+  "nfse.emit.xFant",
+  "nfse.emit.enderNac.xLgr",
+  "nfse.emit.enderNac.nro",
+  "nfse.emit.enderNac.xCpl",
+  "nfse.emit.enderNac.xBairro",
+  "nfse.emit.enderNac.cMun",
+  "nfse.emit.enderNac.UF",
+  "nfse.emit.enderNac.CEP",
+  "nfse.emit.enderExt.cPais",
+  "nfse.emit.enderExt.xPais",
+  "nfse.emit.enderExt.xCidade",
+  "nfse.emit.fone",
+  "nfse.emit.email",
+  "nfse.valores.vBC",
+  "nfse.valores.vLiq",
+  "nfse.valores.vServ",
+  "nfse.valores.vDescCond",
+  "nfse.valores.vDescIncond",
+  "nfse.valores.vDedRedBC",
+  "nfse.valores.vISSQN",
+  "nfse.valores.vTotalRet",
+  "nfse.valores.vISSQNRetido",
+  "nfse.DPS.versao",
+  "nfse.DPS.infDPS.Id",
+  "nfse.DPS.infDPS.tpAmb",
+  "nfse.DPS.infDPS.dhEmi",
+  "nfse.DPS.infDPS.verAplic",
+  "nfse.DPS.infDPS.serie",
+  "nfse.DPS.infDPS.nDPS",
+  "nfse.DPS.infDPS.dCompet",
+  "nfse.DPS.infDPS.tpEmit",
+  "nfse.DPS.infDPS.cLocEmi",
+  "nfse.DPS.infDPS.prest.CNPJ",
+  "nfse.DPS.infDPS.prest.CPF",
+  "nfse.DPS.infDPS.prest.NIF",
+  "nfse.DPS.infDPS.prest.IM",
+  "nfse.DPS.infDPS.prest.regTrib.opSimpNac",
+  "nfse.DPS.infDPS.prest.regTrib.regEspTrib",
+  "nfse.DPS.infDPS.toma.CNPJ",
+  "nfse.DPS.infDPS.toma.CPF",
+  "nfse.DPS.infDPS.toma.NIF",
+  "nfse.DPS.infDPS.toma.xNome",
+  "nfse.DPS.infDPS.toma.end.endNac.cMun",
+  "nfse.DPS.infDPS.toma.end.endNac.CEP",
+  "nfse.DPS.infDPS.toma.end.endExt.cPais",
+  "nfse.DPS.infDPS.toma.end.endExt.xPais",
+  "nfse.DPS.infDPS.toma.end.endExt.xCidade",
+  "nfse.DPS.infDPS.toma.end.xLgr",
+  "nfse.DPS.infDPS.toma.end.nro",
+  "nfse.DPS.infDPS.toma.end.xCpl",
+  "nfse.DPS.infDPS.toma.end.xBairro",
+  "nfse.DPS.infDPS.toma.fone",
+  "nfse.DPS.infDPS.toma.email",
+  "nfse.DPS.infDPS.interm.CNPJ",
+  "nfse.DPS.infDPS.interm.CPF",
+  "nfse.DPS.infDPS.interm.NIF",
+  "nfse.DPS.infDPS.interm.xNome",
+  "nfse.DPS.infDPS.serv.locPrest.cLocPrestacao",
+  "nfse.DPS.infDPS.serv.cServ.cTribNac",
+  "nfse.DPS.infDPS.serv.cServ.cTribMun",
+  "nfse.DPS.infDPS.serv.cServ.CNAE",
+  "nfse.DPS.infDPS.serv.cServ.xDescServ",
+  "nfse.DPS.infDPS.serv.cServ.cNBS",
+  "nfse.DPS.infDPS.serv.infoCompl.xInfComp",
+  "nfse.DPS.infDPS.valores.vServPrest.vServ",
+  "nfse.DPS.infDPS.valores.vServPrest.vReceb",
+  "nfse.DPS.infDPS.valores.vServPrest.vDescCond",
+  "nfse.DPS.infDPS.valores.vServPrest.vDescIncond",
+  "nfse.DPS.infDPS.valores.vDedRedBC.vDR",
+  "nfse.DPS.infDPS.valores.vDedRedBC.tpDR",
+  "nfse.DPS.infDPS.valores.vDedRedBC.xDescOutDed",
+  "nfse.DPS.infDPS.valores.trib.tribMun.tribISSQN",
+  "nfse.DPS.infDPS.valores.trib.tribMun.cLocIncid",
+  "nfse.DPS.infDPS.valores.trib.tribMun.pAliq",
+  "nfse.DPS.infDPS.valores.trib.tribMun.tpRetISSQN",
+  "nfse.DPS.infDPS.valores.trib.tribMun.vISSQN",
+  "nfse.DPS.infDPS.valores.trib.tribMun.vISSQNRet",
+  "nfse.DPS.infDPS.valores.trib.tribFed.pPIS",
+  "nfse.DPS.infDPS.valores.trib.tribFed.pCOFINS",
+  "nfse.DPS.infDPS.valores.trib.tribFed.vPIS",
+  "nfse.DPS.infDPS.valores.trib.tribFed.vCOFINS",
+  "nfse.DPS.infDPS.valores.trib.tribFed.vRetCP",
+  "nfse.DPS.infDPS.valores.trib.tribFed.vRetIRRF",
+  "nfse.DPS.infDPS.valores.trib.tribFed.vRetCSLL",
+  "nfse.DPS.infDPS.valores.trib.totTrib.indTotTrib",
+  "nfse.DPS.infDPS.valores.trib.totTrib.pTotTribFed",
+  "nfse.DPS.infDPS.valores.trib.totTrib.pTotTribEst",
+  "nfse.DPS.infDPS.valores.trib.totTrib.pTotTribMun",
+  "nfse.DPS.infDPS.valores.trib.totTrib.vTotTribFed",
+  "nfse.DPS.infDPS.valores.trib.totTrib.vTotTribEst",
+  "nfse.DPS.infDPS.valores.trib.totTrib.vTotTribMun",
+];
+
+const nfseAbrasfTagPaths = [
+  "nfse.Nfse.InfNfse.Id",
+  "nfse.Nfse.InfNfse.Numero",
+  "nfse.Nfse.InfNfse.CodigoVerificacao",
+  "nfse.Nfse.InfNfse.DataEmissao",
+  "nfse.Nfse.InfNfse.NaturezaOperacao",
+  "nfse.Nfse.InfNfse.RegimeEspecialTributacao",
+  "nfse.Nfse.InfNfse.OptanteSimplesNacional",
+  "nfse.Nfse.InfNfse.IncentivadorCultural",
+  "nfse.Nfse.InfNfse.Competencia",
+  "nfse.Nfse.InfNfse.NfseSubstituida",
+  "nfse.Nfse.InfNfse.OutrasInformacoes",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorServicos",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorDeducoes",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorPis",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorCofins",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorInss",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorIr",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorCsll",
+  "nfse.Nfse.InfNfse.Servico.Valores.IssRetido",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorIss",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorIssRetido",
+  "nfse.Nfse.InfNfse.Servico.Valores.OutrasRetencoes",
+  "nfse.Nfse.InfNfse.Servico.Valores.BaseCalculo",
+  "nfse.Nfse.InfNfse.Servico.Valores.Aliquota",
+  "nfse.Nfse.InfNfse.Servico.Valores.ValorLiquidoNfse",
+  "nfse.Nfse.InfNfse.Servico.Valores.DescontoIncondicionado",
+  "nfse.Nfse.InfNfse.Servico.Valores.DescontoCondicionado",
+  "nfse.Nfse.InfNfse.Servico.ItemListaServico",
+  "nfse.Nfse.InfNfse.Servico.CodigoCnae",
+  "nfse.Nfse.InfNfse.Servico.CodigoTributacaoMunicipio",
+  "nfse.Nfse.InfNfse.Servico.Discriminacao",
+  "nfse.Nfse.InfNfse.Servico.CodigoMunicipio",
+  "nfse.Nfse.InfNfse.Servico.CodigoPais",
+  "nfse.Nfse.InfNfse.Servico.ExigibilidadeISS",
+  "nfse.Nfse.InfNfse.Servico.MunicipioIncidencia",
+  "nfse.Nfse.InfNfse.PrestadorServico.IdentificacaoPrestador.CpfCnpj.Cnpj",
+  "nfse.Nfse.InfNfse.PrestadorServico.IdentificacaoPrestador.CpfCnpj.Cpf",
+  "nfse.Nfse.InfNfse.PrestadorServico.IdentificacaoPrestador.InscricaoMunicipal",
+  "nfse.Nfse.InfNfse.PrestadorServico.RazaoSocial",
+  "nfse.Nfse.InfNfse.PrestadorServico.NomeFantasia",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Endereco",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Numero",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Complemento",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Bairro",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.CodigoMunicipio",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Uf",
+  "nfse.Nfse.InfNfse.PrestadorServico.Endereco.Cep",
+  "nfse.Nfse.InfNfse.PrestadorServico.Contato.Telefone",
+  "nfse.Nfse.InfNfse.PrestadorServico.Contato.Email",
+  "nfse.Nfse.InfNfse.TomadorServico.IdentificacaoTomador.CpfCnpj.Cnpj",
+  "nfse.Nfse.InfNfse.TomadorServico.IdentificacaoTomador.CpfCnpj.Cpf",
+  "nfse.Nfse.InfNfse.TomadorServico.IdentificacaoTomador.InscricaoMunicipal",
+  "nfse.Nfse.InfNfse.TomadorServico.RazaoSocial",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Endereco",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Numero",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Complemento",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Bairro",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.CodigoMunicipio",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Uf",
+  "nfse.Nfse.InfNfse.TomadorServico.Endereco.Cep",
+  "nfse.Nfse.InfNfse.TomadorServico.Contato.Telefone",
+  "nfse.Nfse.InfNfse.TomadorServico.Contato.Email",
+  "nfse.Nfse.InfNfse.IntermediarioServico.RazaoSocial",
+  "nfse.Nfse.InfNfse.IntermediarioServico.CpfCnpj.Cnpj",
+  "nfse.Nfse.InfNfse.IntermediarioServico.CpfCnpj.Cpf",
+  "nfse.Nfse.InfNfse.IntermediarioServico.InscricaoMunicipal",
+  "nfse.Nfse.InfNfse.OrgaoGerador.CodigoMunicipio",
+  "nfse.Nfse.InfNfse.OrgaoGerador.Uf",
+  "nfse.Nfse.InfNfse.ConstrucaoCivil.CodigoObra",
+  "nfse.Nfse.InfNfse.ConstrucaoCivil.Art",
+  "nfse.Nfse.Cancelamento.Confirmacao.Pedido.InfPedidoCancelamento.IdentificacaoNfse.Numero",
+  "nfse.Nfse.Cancelamento.Confirmacao.Pedido.InfPedidoCancelamento.IdentificacaoNfse.CpfCnpj.Cnpj",
+  "nfse.Nfse.Cancelamento.Confirmacao.Pedido.InfPedidoCancelamento.IdentificacaoNfse.CodigoMunicipio",
+  "nfse.Nfse.Cancelamento.Confirmacao.Pedido.InfPedidoCancelamento.CodigoCancelamento",
+];
+
+function uniquePaths(paths: string[]) {
+  return Array.from(new Set(paths));
+}
+
+function nfseSchemaPaths(notes: NoteRow[]) {
+  const hasNational = notes.some((note) => note.documentKind === "nfse-nacional");
+  const hasAbrasf = notes.some((note) => note.documentKind === "nfse-abrasf");
+  const basePaths = hasNational && !hasAbrasf ? nfseNationalTagPaths : hasAbrasf && !hasNational ? nfseAbrasfTagPaths : [...nfseNationalTagPaths, ...nfseAbrasfTagPaths];
+  const discoveredPaths = notes.flatMap((note) => note.rawFields.map((field) => field.key)).filter((key) => key.startsWith("nfse."));
+  return uniquePaths([...basePaths, ...discoveredPaths]);
+}
+
+function nfseAnalyticExport(notes: NoteRow[]) {
+  const tagPaths = nfseSchemaPaths(notes);
+  return {
+    headers: ["arquivo", "padrao", "status", "operacao", ...tagPaths],
+    rows: notes.map((note) => [note.origem, documentKindLabels[note.documentKind], statusLabels[note.status], operationLabel(note.operationDirection), ...tagPaths.map((path) => rowField(note, path))]),
+  };
+}
 function productExport(products: ProductRow[]) {
   return {
     headers: productColumns.map((column) => column.header),
@@ -687,7 +1183,36 @@ function buildProductRankHtml(products: ProductRow[]) {
 
   return `<div class="section"><h2>Ranking por produto</h2><div class="rank-list rank-cols-${columnCount}">${rowsHtml}</div></div>`;
 }
-function buildReportHtml(notes: NoteRow[], products: ProductRow[], invalidFiles: string[], options: OutputOptions) {
+function operationLabel(direction: OperationDirection) {
+  if (direction === "entrada") return "Entrada";
+  if (direction === "saida") return "Saida";
+  return "Nao classificada";
+}
+
+function buildOperationBlockHtml(title: string, direction: OperationDirection, notes: NoteRow[], products: ProductRow[], options: OutputOptions) {
+  const operationNotes = notes.filter((note) => note.operationDirection === direction);
+  const operationProducts = products.filter((product) => product.operationDirection === direction);
+  if (!operationNotes.length && !operationProducts.length) return "";
+
+  const totals = summarize(operationNotes, 0);
+  const tableHtml = options.pdfIncludeNoteDetails
+    ? `<table><thead><tr><th>Nota</th><th>Data</th><th>Status</th><th>Emitente</th><th>Destinatario/Tomador</th><th>Itens</th><th>Valor</th></tr></thead><tbody>${operationNotes
+        .map(
+          (note) =>
+            `<tr><td>${htmlEscape(note.numero || "-")}</td><td>${htmlEscape(dateText(note.emissao) || "-")}</td><td>${htmlEscape(statusLabels[note.status])}</td><td>${htmlEscape(note.emitente || "-")}</td><td>${htmlEscape(note.counterpartyName || "-")}</td><td>${note.itens}</td><td>${money(note.valorNota)}</td></tr>`,
+        )
+        .join("")}</tbody></table>`
+    : "";
+
+  return `<div class="section operation-section"><h2>${htmlEscape(title)}</h2><div class="total"><div><div class="label">Notas</div><div class="value">${operationNotes.length}</div></div><div><div class="label">Valor das notas</div><div class="value">${money(totals.valorNotas)}</div></div><div><div class="label">Produtos/servicos</div><div class="value">${money(totals.valorProdutos)}</div></div><div><div class="label">Itens/servicos</div><div class="value">${totals.itens}</div></div></div>${buildProductRankHtml(operationProducts)}${tableHtml}</div>`;
+}
+
+function buildOperationsOverviewHtml(notes: NoteRow[]) {
+  const saidas = summarize(notes.filter((note) => note.operationDirection === "saida"), 0);
+  const entradas = summarize(notes.filter((note) => note.operationDirection === "entrada"), 0);
+  return `<div class="section"><h2>Resumo das operacoes</h2><table><thead><tr><th>Operacao</th><th>Notas</th><th>Autorizadas</th><th>Canceladas</th><th>Sem protocolo</th><th>Valor</th></tr></thead><tbody><tr><td>Saidas</td><td>${saidas.autorizada + saidas.cancelada + saidas["sem-protocolo"] + saidas.invalida}</td><td>${saidas.autorizada}</td><td>${saidas.cancelada}</td><td>${saidas["sem-protocolo"]}</td><td>${money(saidas.valorNotas)}</td></tr><tr><td>Entradas</td><td>${entradas.autorizada + entradas.cancelada + entradas["sem-protocolo"] + entradas.invalida}</td><td>${entradas.autorizada}</td><td>${entradas.cancelada}</td><td>${entradas["sem-protocolo"]}</td><td>${money(entradas.valorNotas)}</td></tr></tbody></table></div>`;
+}
+function buildReportHtml(notes: NoteRow[], products: ProductRow[], invalidFiles: string[], options: OutputOptions, selectedType: SelectedDocumentType = "nfce") {
   const totals = summarize(notes, options.includeInvalid ? invalidFiles.length : 0);
   const adjustmentValue = totals.valorNotas - totals.valorProdutos + totals.descontos;
   const cards = [
@@ -696,8 +1221,12 @@ function buildReportHtml(notes: NoteRow[], products: ProductRow[], invalidFiles:
     ["Sem protocolo", totals["sem-protocolo"]],
     ["Invalidas", totals.invalida],
   ];
+  const isOperationReport = selectedType !== "nfce";
+  const operationSections = isOperationReport
+    ? buildOperationBlockHtml("Saidas", "saida", notes, products, options) + buildOperationBlockHtml("Entradas", "entrada", notes, products, options) + buildOperationsOverviewHtml(notes)
+    : "";
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Relatorio NFC-e eepy</title><style>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Relatorio de notas eepy</title><style>
     @page { margin: 18mm; }
     body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Arial, sans-serif; }
     .hero { border-radius: 24px; padding: 28px; color: white; background: linear-gradient(135deg, #06111f, #12364b 58%, #f97316); }
@@ -772,20 +1301,21 @@ function buildReportHtml(notes: NoteRow[], products: ProductRow[], invalidFiles:
     }
   </style></head><body>
     <button class="no-print" onclick="window.print()" style="position:fixed;right:18px;top:18px;border:0;border-radius:999px;background:#0f172a;color:white;padding:10px 16px;font-weight:700;">Salvar em PDF</button>
-    <div class="hero"><div class="eyebrow">Linha agio / eepy</div><h1>Relatorio resumido NFC-e</h1><div class="muted">Gerado em ${htmlEscape(new Date().toLocaleString("pt-BR"))}. Configurado com ${notes.length} notas consideradas no resumo.</div></div>
+    <div class="hero"><div class="eyebrow">Linha agio / eepy</div><h1>Relatorio resumido de notas</h1><div class="muted">Gerado em ${htmlEscape(new Date().toLocaleString("pt-BR"))}. Configurado com ${notes.length} notas consideradas no resumo.</div></div>
     ${buildEmitterHtml(notes)}
     ${options.pdfIncludeTotals ? `<div class="cards">${cards.map(([label, value]) => `<div class="card"><div class="label">${label}</div><div class="value">${value}</div></div>`).join("")}</div><div class="section"><h2>Totalizadores financeiros</h2><div class="total"><div><div class="label">Valor das notas</div><div class="value">${money(totals.valorNotas)}</div></div><div><div class="label">Valor dos produtos</div><div class="value">${money(totals.valorProdutos)}</div></div><div><div class="label">Descontos</div><div class="value">${money(totals.descontos)}</div></div><div><div class="label">Outros / ajustes</div><div class="value">${money(adjustmentValue)}</div></div></div><p class="muted" style="color:#64748b;margin:14px 0 0">A diferenca aparece porque o valor da nota pode incluir outros valores, frete, seguro, tributos ou ajustes alem do total bruto de produtos e descontos.</p></div>` : ""}
-    ${buildProductRankHtml(products)}
-    ${options.pdfIncludeNoteDetails ? `<div class="section notes-section"><h2>Notas consideradas</h2><table><thead><tr><th>Nota</th><th>Data</th><th>Status</th><th>Emitente</th><th>Itens</th><th>Valor</th></tr></thead><tbody>${notes.map((note) => `<tr><td>${htmlEscape(note.numero || "-")}</td><td>${htmlEscape(dateText(note.emissao) || "-")}</td><td>${htmlEscape(statusLabels[note.status])}</td><td>${htmlEscape(note.emitente || "-")}</td><td>${note.itens}</td><td>${money(note.valorNota)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${isOperationReport ? "" : buildProductRankHtml(products)}
+    ${operationSections}
+    ${!isOperationReport && options.pdfIncludeNoteDetails ? `<div class="section notes-section"><h2>Notas consideradas</h2><table><thead><tr><th>Tipo</th><th>Nota</th><th>Data</th><th>Status</th><th>Emitente</th><th>Itens</th><th>Valor</th></tr></thead><tbody>${notes.map((note) => `<tr><td>${htmlEscape(documentKindLabels[note.documentKind])}</td><td>${htmlEscape(note.numero || "-")}</td><td>${htmlEscape(dateText(note.emissao) || "-")}</td><td>${htmlEscape(statusLabels[note.status])}</td><td>${htmlEscape(note.emitente || "-")}</td><td>${note.itens}</td><td>${money(note.valorNota)}</td></tr>`).join("")}</tbody></table></div>` : ""}
     ${options.includeInvalid && invalidFiles.length ? `<div class="section"><h2>Arquivos invalidos</h2><table><tbody>${invalidFiles.map((file) => `<tr><td>${htmlEscape(file)}</td></tr>`).join("")}</tbody></table></div>` : ""}
-    <div class="footer">eepy - Conversor NFC-e para Excel e PDF</div>
+    <div class="footer">eepy - Conversor de notas para Excel e PDF</div>
   </body></html>`;
 }
 
-function openPrintableReport(notes: NoteRow[], products: ProductRow[], invalidFiles: string[], options: OutputOptions) {
+function openPrintableReport(notes: NoteRow[], products: ProductRow[], invalidFiles: string[], options: OutputOptions, selectedType: SelectedDocumentType) {
   const report = window.open("", "_blank", "width=1100,height=800");
   if (!report) return;
-  report.document.write(buildReportHtml(notes, products, invalidFiles, options));
+  report.document.write(buildReportHtml(notes, products, invalidFiles, options, selectedType));
   report.document.close();
   report.focus();
 }
@@ -952,7 +1482,53 @@ function deduplicateNotes(notes: NoteRow[]) {
   return Array.from(byKey.values());
 }
 
-export default function NfceConverter() {
+function cleanDocumentId(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function repeatedIds(notes: NoteRow[], selector: (note: NoteRow) => string) {
+  return notes.reduce((map, note) => {
+    const id = cleanDocumentId(selector(note));
+    if (id.length >= 11) map.set(id, (map.get(id) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>());
+}
+
+function classifyBatchDirections(notes: NoteRow[], products: ProductRow[], selectedType: SelectedDocumentType) {
+  if (selectedType === "nfce") return { notes, products };
+
+  const issuerCounts = repeatedIds(notes, (note) => note.cnpj);
+  const counterpartyCounts = repeatedIds(notes, (note) => note.counterpartyCnpj);
+  const notesByOriginalKey = new Map<string, NoteRow>();
+
+  const classifiedNotes = notes.map((note) => {
+    const issuerRepeated = (issuerCounts.get(cleanDocumentId(note.cnpj)) ?? 0) >= 2;
+    const counterpartyRepeated = (counterpartyCounts.get(cleanDocumentId(note.counterpartyCnpj)) ?? 0) >= 2;
+    const fallback = note.operationDirection !== "nao-classificada" ? note.operationDirection : "saida";
+    const operationDirection: OperationDirection = issuerRepeated && !counterpartyRepeated ? "saida" : counterpartyRepeated && !issuerRepeated ? "entrada" : fallback;
+    const documentKind: DocumentKind = selectedType === "nfe" ? (operationDirection === "entrada" ? "nfe-entrada" : "nfe-saida") : note.documentKind;
+    const classified = { ...note, operationDirection, documentKind };
+    notesByOriginalKey.set(note.chave || `${note.numero}-${note.serie}-${note.origem}`, classified);
+    return classified;
+  });
+
+  const classifiedProducts = products.map((product) => {
+    const note = notesByOriginalKey.get(product.chave);
+    const operationDirection = note?.operationDirection ?? product.operationDirection;
+    const documentKind: DocumentKind = selectedType === "nfe" ? (operationDirection === "entrada" ? "nfe-entrada" : "nfe-saida") : product.documentKind;
+    return {
+      ...product,
+      operationDirection,
+      documentKind,
+      counterpartyName: note?.counterpartyName ?? product.counterpartyName,
+      counterpartyCnpj: note?.counterpartyCnpj ?? product.counterpartyCnpj,
+    };
+  });
+
+  return { notes: classifiedNotes, products: classifiedProducts };
+}
+export default function NotasConverter() {
+  const [selectedDocumentType, setSelectedDocumentType] = useState<SelectedDocumentType>("nfce");
   const [options, setOptions] = useState(initialOptions);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -967,6 +1543,13 @@ export default function NfceConverter() {
   const filteredKeys = useMemo(() => new Set(filteredNotes.map((note) => note.chave)), [filteredNotes]);
   const filteredProducts = useMemo(() => products.filter((product) => filteredKeys.has(product.chave)), [products, filteredKeys]);
   const totals = useMemo(() => summarize(filteredNotes, options.includeInvalid ? invalidFiles.length : 0), [filteredNotes, invalidFiles.length, options.includeInvalid]);
+  const documentBreakdown = useMemo(() => {
+    return filteredNotes.reduce<Partial<Record<DocumentKind, number>>>((acc, note) => {
+      acc[note.documentKind] = (acc[note.documentKind] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [filteredNotes]);
+  const detectedDocuments = (Object.entries(documentBreakdown) as Array<[DocumentKind, number]>).filter(([, count]) => count > 0);
 
   async function processFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -974,7 +1557,7 @@ export default function NfceConverter() {
     setProcessingMessage("Recebendo arquivos e preparando leitura...");
     try {
       await waitForPaint();
-      setProcessingMessage("Extraindo pacotes e localizando XMLs NFC-e...");
+      setProcessingMessage(`Extraindo pacotes e localizando XMLs de ${selectedDocumentTypeLabels[selectedDocumentType]}...`);
       await waitForPaint();
       const normalized = await normalizeFiles(files);
       setProcessingMessage(`Lendo ${normalized.inputFiles.length} arquivo(s) XML...`);
@@ -986,7 +1569,7 @@ export default function NfceConverter() {
             if (inputFile.extension !== "rar") acc.invalidFiles.push(inputFile.relativePath);
             return acc;
           }
-          const result = parseXmlDocument(inputFile.text, inputFile.relativePath);
+          const result = parseXmlDocument(inputFile.text, inputFile.relativePath, selectedDocumentType);
           acc.notes.push(...result.notes);
           acc.products.push(...result.products);
           acc.invalidFiles.push(...result.invalidFiles);
@@ -999,13 +1582,23 @@ export default function NfceConverter() {
       await waitForPaint();
       const uniqueNotes = deduplicateNotes(parsed.notes);
       const activeKeys = new Set(uniqueNotes.map((note) => note.chave));
-      setNotes(uniqueNotes);
-      setProducts(parsed.products.filter((product) => activeKeys.has(product.chave)));
+      const activeProducts = parsed.products.filter((product) => activeKeys.has(product.chave));
+      const classified = classifyBatchDirections(uniqueNotes, activeProducts, selectedDocumentType);
+      setNotes(classified.notes);
+      setProducts(classified.products);
       setInvalidFiles(parsed.invalidFiles);
       setWarnings(parsed.warnings);
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  function changeDocumentType(type: SelectedDocumentType) {
+    setSelectedDocumentType(type);
+    setNotes([]);
+    setProducts([]);
+    setInvalidFiles([]);
+    setWarnings([]);
   }
 
   function setOption<K extends keyof OutputOptions>(key: K, value: OutputOptions[K]) {
@@ -1014,16 +1607,48 @@ export default function NfceConverter() {
 
   function generateOutputs() {
     if (options.mode === "excel") {
+      if (selectedDocumentType === "nfse") {
+        const exportData = nfseAnalyticExport(filteredNotes);
+        downloadBlob("nfse-analitico.xls", buildExcelXml("NFS-e analitico", exportData.headers, exportData.rows), "application/vnd.ms-excel;charset=utf-8");
+        return;
+      }
+
       if (options.excelModel === "produtos") {
         const exportData = productExport(filteredProducts);
-        downloadBlob("nfce-analitico-produtos.xls", buildExcelXml("Analitico por produto", exportData.headers, exportData.rows), "application/vnd.ms-excel;charset=utf-8");
+        if (selectedDocumentType === "nfce") {
+          downloadBlob("notas-analitico-itens.xls", buildExcelXml("Analitico por produto", exportData.headers, exportData.rows), "application/vnd.ms-excel;charset=utf-8");
+        } else {
+          const saidas = productExport(filteredProducts.filter((product) => product.operationDirection === "saida"));
+          const entradas = productExport(filteredProducts.filter((product) => product.operationDirection === "entrada"));
+          downloadBlob(
+            "notas-analitico-itens.xls",
+            buildExcelWorkbookXml([
+              { name: "Saidas", headers: saidas.headers, rows: saidas.rows },
+              { name: "Entradas", headers: entradas.headers, rows: entradas.rows },
+            ]),
+            "application/vnd.ms-excel;charset=utf-8",
+          );
+        }
       } else {
         const exportData = noteExport(filteredNotes);
-        downloadBlob("nfce-analitico-notas.xls", buildExcelXml("Analitico por nota", exportData.headers, exportData.rows), "application/vnd.ms-excel;charset=utf-8");
+        if (selectedDocumentType === "nfce") {
+          downloadBlob("notas-analitico-notas.xls", buildExcelXml("Analitico por nota", exportData.headers, exportData.rows), "application/vnd.ms-excel;charset=utf-8");
+        } else {
+          const saidas = noteExport(filteredNotes.filter((note) => note.operationDirection === "saida"));
+          const entradas = noteExport(filteredNotes.filter((note) => note.operationDirection === "entrada"));
+          downloadBlob(
+            "notas-analitico-notas.xls",
+            buildExcelWorkbookXml([
+              { name: "Saidas", headers: saidas.headers, rows: saidas.rows },
+              { name: "Entradas", headers: entradas.headers, rows: entradas.rows },
+            ]),
+            "application/vnd.ms-excel;charset=utf-8",
+          );
+        }
       }
       return;
     }
-    openPrintableReport(filteredNotes, filteredProducts, invalidFiles, options);
+    openPrintableReport(filteredNotes, filteredProducts, invalidFiles, options, selectedDocumentType);
   }
 
   const canGenerate = filteredNotes.length > 0 || (options.includeInvalid && invalidFiles.length > 0);
@@ -1039,7 +1664,7 @@ export default function NfceConverter() {
               <Loader2 className="h-6 w-6 animate-spin text-cyan-100" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white">Processando NFC-e</p>
+              <p className="text-sm font-semibold text-white">Processando {selectedDocumentTypeLabels[selectedDocumentType]}</p>
               <p className="mt-1 text-sm leading-6 text-slate-300">{processingMessage}</p>
               <div className="mt-4 space-y-2">
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
@@ -1058,8 +1683,13 @@ export default function NfceConverter() {
       <div className="space-y-5">
         <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-7">
           <p className="text-[11px] uppercase tracking-[0.26em] text-orange-200">Entrada</p>
-          <h2 className="mt-4 text-2xl font-semibold text-white">NFC-e selecionada</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-300">Envie XMLs avulsos, uma pasta com subpastas, ZIP ou RAR. A ferramenta processa os arquivos e preserva seu fluxo local.</p>
+          <h2 className="mt-4 text-2xl font-semibold text-white">XMLs fiscais selecionados</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-300">Escolha o tipo de XML fiscal antes de importar. O conversor processa somente arquivos compatíveis com a seleção.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            {(["nfce", "nfe", "nfse"] as SelectedDocumentType[]).map((type) => (
+              <button key={type} type="button" disabled={isProcessing} onClick={() => changeDocumentType(type)} className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${selectedDocumentType === type ? "border-cyan-300/50 bg-cyan-300/12 text-white" : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/8"}`}>{selectedDocumentTypeLabels[type]}</button>
+            ))}
+          </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button type="button" disabled={isProcessing} onClick={() => fileInputRef.current?.click()} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-4 text-sm font-semibold text-cyan-50 transition hover:bg-cyan-300/15 disabled:cursor-not-allowed disabled:opacity-50"><UploadCloud className="h-5 w-5" />Selecionar arquivos</button>
             <button type="button" disabled={isProcessing} onClick={() => folderInputRef.current?.click()} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-orange-300/20 bg-orange-300/10 px-4 py-4 text-sm font-semibold text-orange-50 transition hover:bg-orange-300/15 disabled:cursor-not-allowed disabled:opacity-50"><FolderOpen className="h-5 w-5" />Abrir pasta</button>
@@ -1067,7 +1697,7 @@ export default function NfceConverter() {
           <input ref={fileInputRef} type="file" multiple accept=".xml,.zip,.rar,application/xml,text/xml,application/zip,application/x-rar-compressed" className="hidden" onChange={(event) => processFiles(event.target.files)} />
           <input ref={folderInputRef} type="file" multiple className="hidden" // @ts-expect-error webkitdirectory is a browser-specific folder picker attribute.
             webkitdirectory="true" onChange={(event) => processFiles(event.target.files)} />
-          <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-xs leading-6 text-slate-300"><div className="flex items-center gap-2 font-semibold text-slate-100"><Archive className="h-4 w-4 text-cyan-200" />Flexibilidade atual</div><p className="mt-2">XML, multiplos XMLs, pasta ate 5 subpastas, ZIP e RAR com XMLs NFC-e.</p></div>
+          <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-xs leading-6 text-slate-300"><div className="flex items-center gap-2 font-semibold text-slate-100"><Archive className="h-4 w-4 text-cyan-200" />Flexibilidade atual</div><p className="mt-2">XML, multiplos XMLs, pasta ate 5 subpastas, ZIP e RAR. Tipo atual: {selectedDocumentTypeLabels[selectedDocumentType]}.</p></div>
         </section>
 
         <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-7">
@@ -1082,6 +1712,8 @@ export default function NfceConverter() {
             ))}
           </div>
 
+          {selectedDocumentType !== "nfse" ? (
+            <>
           <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Configuracao da saida</p>
             {options.mode === "excel" ? (
@@ -1109,6 +1741,9 @@ export default function NfceConverter() {
             </div>
           </div>
 
+            </>
+          ) : null}
+
           <button type="button" disabled={!canGenerate || isProcessing} onClick={generateOutputs} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#67e8f9,#f97316)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_44px_rgba(14,165,233,0.22)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45">{isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{outputLabel}</button>
         </section>
       </div>
@@ -1123,17 +1758,65 @@ export default function NfceConverter() {
         <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-7">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div><p className="text-[11px] uppercase tracking-[0.26em] text-orange-200">Previa</p><h2 className="mt-4 text-2xl font-semibold text-white">Resultado da leitura</h2></div>{canGenerate ? <span className="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100"><CheckCircle2 className="h-4 w-4" />Pronto para gerar</span> : null}</div>
           <div className="mt-6 grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Notas filtradas</p><p className="mt-2 text-2xl font-semibold text-white">{filteredNotes.length}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Produtos filtrados</p><p className="mt-2 text-2xl font-semibold text-white">{filteredProducts.length}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Total filtrado</p><p className="mt-2 text-2xl font-semibold text-white">{money(totals.valorNotas)}</p></div></div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Valor produtos</p><p className="mt-2 text-xl font-semibold text-white">{money(totals.valorProdutos)}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Descontos</p><p className="mt-2 text-xl font-semibold text-white">{money(totals.descontos)}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Itens</p><p className="mt-2 text-xl font-semibold text-white">{totals.itens}</p></div></div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Valor produtos/servicos</p><p className="mt-2 text-xl font-semibold text-white">{money(totals.valorProdutos)}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Descontos</p><p className="mt-2 text-xl font-semibold text-white">{money(totals.descontos)}</p></div><div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><p className="text-xs text-slate-400">Itens/servicos</p><p className="mt-2 text-xl font-semibold text-white">{totals.itens}</p></div></div>
+          {detectedDocuments.length ? <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-cyan-300/8 p-4"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">Tipos detectados</p><div className="mt-3 flex flex-wrap gap-2">{detectedDocuments.map(([kind, count]) => <span key={kind} className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-semibold text-slate-100">{documentKindLabels[kind]}: {count}</span>)}</div></div> : null}
           <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm leading-7 text-slate-300"><BarChart3 className="mb-3 h-5 w-5 text-cyan-200" />A previa mostra apenas totalizadores. O detalhamento sai no Excel ou no relatorio PDF conforme os filtros escolhidos.</div>
         </section>
 
         {(warnings.length || invalidFiles.length) ? <section className="surface-card rounded-[28px] border border-white/10 p-6 md:p-7"><p className="flex items-center gap-2 text-sm font-semibold text-orange-100"><AlertTriangle className="h-4 w-4" />Pontos de atencao</p><div className="mt-4 space-y-2 text-sm leading-6 text-slate-300">{[...warnings, ...invalidFiles.map((file) => `${file}: XML invalido ou nao reconhecido`)].map((item) => <p key={item}>{item}</p>)}</div></section> : null}
 
-        <section className="grid gap-5 md:grid-cols-2"><article className="surface-card rounded-[24px] border border-white/10 p-5"><FileSpreadsheet className="h-5 w-5 text-cyan-200" /><h3 className="mt-4 text-lg font-semibold text-white">Excel enriquecido</h3><p className="mt-2 text-sm leading-6 text-slate-300">Inclui campos principais e, se marcado, colunas dinamicas com as tags encontradas no XML.</p></article><article className="surface-card rounded-[24px] border border-white/10 p-5"><FileText className="h-5 w-5 text-orange-200" /><h3 className="mt-4 text-lg font-semibold text-white">Relatorio eepy</h3><p className="mt-2 text-sm leading-6 text-slate-300">Abre um relatorio visual pronto para salvar como PDF, com totalizadores conforme configuracao.</p></article></section>
+        <section className="grid gap-5 md:grid-cols-2"><article className="surface-card rounded-[24px] border border-white/10 p-5"><FileSpreadsheet className="h-5 w-5 text-cyan-200" /><h3 className="mt-4 text-lg font-semibold text-white">Excel enriquecido</h3><p className="mt-2 text-sm leading-6 text-slate-300">Inclui campos principais de NFC-e, NF-e e NFS-e, mantendo as tags encontradas no XML.</p></article><article className="surface-card rounded-[24px] border border-white/10 p-5"><FileText className="h-5 w-5 text-orange-200" /><h3 className="mt-4 text-lg font-semibold text-white">Relatorio eepy</h3><p className="mt-2 text-sm leading-6 text-slate-300">Abre um relatorio visual pronto para salvar como PDF, com totalizadores e tipos detectados.</p></article></section>
       </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

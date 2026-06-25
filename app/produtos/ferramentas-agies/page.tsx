@@ -7,6 +7,7 @@ import {
   Blocks,
   Calculator,
   FileSpreadsheet,
+  ReceiptText,
   Sparkles,
 } from "lucide-react";
 import AgioAmbientBackground from "./ui/agio-ambient-background";
@@ -36,11 +37,20 @@ const tools = [
   {
     icon: FileSpreadsheet,
     status: "Utilitario fiscal",
-    title: "Conversor NFC-e para Excel e PDF",
+    title: "Conversor de Notas para Excel e PDF",
     description:
-      "Importe XMLs de NFC-e, pastas ou ZIPs para gerar analiticos em Excel e relatorios resumidos em PDF.",
-    href: "/produtos/ferramentas-agies/conversor-nfce",
+      "Importe XMLs de NFC-e, NF-e e NFS-e, pastas, ZIPs ou RARs para gerar analiticos em Excel e relatorios resumidos em PDF.",
+    href: "/produtos/ferramentas-agies/conversor-notas",
     actionLabel: "Abrir conversor",
+  },
+  {
+    icon: ReceiptText,
+    status: "Calculadora NFS-e",
+    title: "Compor Valor Bruto da NFS-e",
+    description:
+      "Calcule o valor bruto da nota a partir do liquido desejado, impostos e custos adicionais, com relatorio exportavel em PDF.",
+    href: "/produtos/ferramentas-agies/compor-valor-bruto-nfse",
+    actionLabel: "Abrir calculadora",
   },
 ];
 
